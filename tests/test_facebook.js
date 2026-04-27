@@ -106,7 +106,7 @@ async function testFacebook(name, location) {
     await waitManual('Connecte-toi à Facebook si besoin, puis appuie sur ENTREE...');
 
     // Étape 2 : trouver la page FB via Google
-    const links = await searchGoogleForFB(page, `"${name}" site:facebook.com`);
+    const links = await searchGoogleForFB(page, `"${name}" "${location}" site:facebook.com`);
     const fbLink = links.find(l => l.includes('facebook.com') && !l.includes('posts'));
 
     if (!fbLink) {
