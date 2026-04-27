@@ -3,8 +3,13 @@ const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const fs = require('fs');
 const path = require('path');
 const config = require('../config');
+const readline = require('readline');
 
 chromium.use(StealthPlugin());
+
+const USER_DATA_DIR = path.join(__dirname, '..', 'chrome_scraper_profile');
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+const waitManual = (msg) => new Promise(res => rl.question(`👉 ${msg}`, () => res()));
 
 const OUTPUT_FILE = path.join(__dirname, '..', 'data', config.version, 'instagram_results.csv');
 
@@ -32,39 +37,95 @@ function decodeBingUrl(href) {
   } catch { return null; }
 }
 
+const MAX_PROFILES_PER_SEARCH = 8;
+
 function isPantin(text) {
   return /pantin|93500/i.test(text);
 }
 
+// Accepte uniquement les URLs de profil racine : instagram.com/username/
+// Rejette posts (/p/), reels, stories, explore, tv, highlights
+function isProfileUrl(url) {
+  try {
+    const u = new URL(url);
+    if (!u.hostname.includes('instagram.com')) return false;
+    // Le chemin doit être /username ou /username/ sans sous-chemin
+    const parts = u.pathname.replace(/^\/|\/$/g, '').split('/');
+    if (parts.length !== 1 || parts[0] === '') return false;
+    return !/^(p|reel|reels|stories|explore|tv|highlights|accounts|login|privacy|legal|about|press|api|directory|challenge)$/i.test(parts[0]);
+  } catch { return false; }
+}
+
+function filterAndLogProfiles(results, source) {
+  const accepted = [];
+  const rejected = [];
+  for (const r of results) {
+    if (isProfileUrl(r.realUrl)) {
+      accepted.push(r);
+    } else {
+      rejected.push(r.realUrl);
+    }
+  }
+  if (rejected.length > 0) {
+    console.log(`      [${source}] Rejetés (non-profil) : ${rejected.join(', ')}`);
+  }
+  console.log(`      [${source}] ${accepted.length} profil(s) valide(s) sur ${results.length} résultats`);
+  return accepted.slice(0, MAX_PROFILES_PER_SEARCH);
+}
+
+let isFirstSearchGoogle = true;
+
 async function searchGoogleInstagram(page, category) {
   const query = `${category} ${LOCATION} site:instagram.com`;
   const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&hl=fr&num=20`;
+  console.log(`      [Google] Requête : ${query}`);
   try {
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+
+    if (isFirstSearchGoogle) {
+      console.log("\n🛑 PREMIÈRE RECHERCHE GOOGLE : Vérifie le Captcha.");
+      await waitManual("Résous le captcha si besoin, puis appuie sur ENTREE...");
+      isFirstSearchGoogle = false;
+    }
+
     await page.waitForTimeout(1500 + Math.random() * 1000);
 
-    return await page.evaluate(() => {
+    const raw = await page.evaluate(() => {
       return [...document.querySelectorAll('h3')].map(h3 => {
         const a = h3.closest('a') || h3.querySelector('a') || h3.parentElement?.closest('a');
         return a ? { title: h3.innerText.trim(), realUrl: a.href } : null;
       }).filter(r => r && r.realUrl && r.realUrl.includes('instagram.com/'));
     });
-  } catch { return []; }
+
+    console.log(`      [Google] ${raw.length} lien(s) instagram.com bruts`);
+    return filterAndLogProfiles(raw, 'Google');
+  } catch (err) {
+    console.error(`      [Google] Erreur : ${err.message}`);
+    return [];
+  }
 }
+
+let isFirstSearchBing = true;
 
 async function searchBingInstagram(page, category) {
   const query = `${category} ${LOCATION} site:instagram.com`;
   const url = `https://www.bing.com/search?q=${encodeURIComponent(query)}&setlang=fr&cc=FR&mkt=fr-FR&count=20`;
+  console.log(`      [Bing] Requête : ${query}`);
   try {
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+
+    if (isFirstSearchBing) {
+      console.log("\n🛑 PREMIÈRE RECHERCHE BING : Vérifie le Captcha.");
+      await waitManual("Résous le captcha si besoin, puis appuie sur ENTREE...");
+      isFirstSearchBing = false;
+    }
+
     await page.waitForTimeout(1500 + Math.random() * 1000);
 
-    return await page.evaluate(() => {
+    const raw = await page.evaluate(() => {
       return [...document.querySelectorAll('li.b_algo h2 a')].map(a => {
         const href = a.href;
-        // Liens directs instagram.com
         if (href.includes('instagram.com/')) return { title: a.innerText.trim(), realUrl: href };
-        // Liens encodés Bing (u=a1...)
         const match = href.match(/[?&]u=a1([A-Za-z0-9+/=_-]+)/);
         if (match) {
           try {
@@ -76,16 +137,20 @@ async function searchBingInstagram(page, category) {
         return null;
       }).filter(Boolean);
     });
-  } catch { return []; }
+
+    console.log(`      [Bing] ${raw.length} lien(s) instagram.com bruts`);
+    return filterAndLogProfiles(raw, 'Bing');
+  } catch (err) {
+    console.error(`      [Bing] Erreur : ${err.message}`);
+    return [];
+  }
 }
 
 async function searchInstagramProfiles(page, category) {
-  // 1. Google en priorité (plus fiable pour site:instagram.com)
   const googleResults = await searchGoogleInstagram(page, category);
   if (googleResults.length > 0) return googleResults;
 
-  // 2. Fallback Bing
-  console.log(`      ↳ Google: 0 résultat, fallback Bing...`);
+  console.log(`      ↳ Google: 0 profil valide, fallback Bing...`);
   return await searchBingInstagram(page, category);
 }
 
@@ -97,7 +162,6 @@ async function scrapeInstagramProfile(page, profileUrl) {
     return await page.evaluate(() => {
       const metaDesc = document.querySelector('meta[name="description"]')?.content || '';
       const ogTitle = document.querySelector('meta[property="og:title"]')?.content || '';
-      const ogImage = document.querySelector('meta[property="og:image"]')?.content || '';
 
       // Email dans meta description (bio Instagram)
       const emailRegex = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
@@ -116,11 +180,10 @@ async function scrapeInstagramProfile(page, profileUrl) {
 }
 
 async function main() {
-  const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({
-    locale: 'fr-FR', timezoneId: 'Europe/Paris',
-    viewport: { width: 1280, height: 800 },
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  const context = await chromium.launchPersistentContext(USER_DATA_DIR, {
+    headless: false,
+    viewport: null,
+    executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
   });
   const page = await context.newPage();
 
@@ -129,6 +192,14 @@ async function main() {
   const csvLines = ['\uFEFFNom Instagram;Handle;Bio;Email;Catégorie;URL'];
 
   console.log(`Scraping Instagram — Pantin 93\n${CATEGORIES.length} catégories\n`);
+
+  await page.goto("https://www.instagram.com");
+  console.log("\n--- Etape 1: Instagram ---");
+  await waitManual("Connecte-toi à Instagram (très important !), puis appuie sur ENTREE...");
+
+  await page.goto("https://www.google.com");
+  console.log("\n--- Etape 2: Google ---");
+  await waitManual("Accepte les cookies de Google, puis appuie sur ENTREE pour lancer le scraping...");
 
   for (const cat of CATEGORIES) {
     process.stdout.write(`→ "${cat}" ... `);
@@ -181,7 +252,8 @@ async function main() {
   console.log(`  dont ${withEmail} avec email`);
   console.log(`  Fichier : ${OUTPUT_FILE}`);
 
-  await browser.close();
+  await context.close();
+  rl.close();
 }
 
 main().catch(console.error);

@@ -16,7 +16,7 @@
 |---|---|
 | 🔎 **Sources** | PagesJaunes · Pappers · Google Maps · Planity · Cylex · Instagram |
 | 🧹 **Merge** | Dedup by `Name+Address`, email-based consolidation, junk URL filtering |
-| ✨ **Enrich** | Email + phone + website via Google → site scraping → Facebook (confirmed links only) |
+| ✨ **Enrich** | Email + phone + website via Google → site scraping → Facebook (confirmed links only) → `contact@domain` fallback |
 | 🛡️ **Robust** | Resume-safe (`.state.json`), manual captcha, isolated Chrome profile |
 | 🎯 **Use case** | Local B2B outreach · craftsmen · freelancers · SMBs |
 
@@ -111,6 +111,11 @@ tests/           — standalone test scripts for Google and Facebook flows
 │         ① Google search                                 │
 │         ② Visit top organic links                       │
 │         ③ Facebook (confirmed link only)                │
+│                         │                               │
+│  4. POST-PROCESS  (after full loop)                     │
+│                         │                               │
+│       For rows with website but no email:               │
+│         ④ inject contact@domain.tld                     │
 │                         ▼                               │
 │          results_final_enriched.csv  ✅                 │
 └─────────────────────────────────────────────────────────┘
@@ -128,8 +133,29 @@ Each scraper runs headless (or stealth) and writes its own CSV into `data/[VERSI
 | `pappers.js` | Pappers.fr | Playwright headless |
 | `pagesjaunes.js` | PagesJaunes.fr | Playwright headless — also captures Facebook profile link if present |
 | `googlemaps.js` | Google Maps API | HTTP |
-| `instagram.js` | Instagram | Google `site:instagram.com` → fallback Bing |
+| `instagram.js` | Instagram | Chrome persistent profile (stealth) — manual login → Google `site:instagram.com` → fallback Bing — profile URL validation → meta tag extraction |
 | `cylex.js` | Cylex.fr | Playwright headless |
+
+#### `instagram.js` — detail
+
+Runs Chrome in **visible + stealth mode** (same persistent profile as the enricher) to avoid Instagram bot detection.
+
+**Flow:**
+
+1. **Manual login** — Chrome opens Instagram; script pauses until you press Enter after logging in
+2. **Manual Google check** — pauses on Google for cookie acceptance / captcha
+3. For each category in `config.categories`:
+   - **Google search** `<category> <city> site:instagram.com` (20 results)
+   - If 0 valid profiles → **Bing fallback** with Bing URL base64-decode
+   - Profile URL validation: only `instagram.com/<username>/` accepted — `/p/`, `/reel/`, `/stories/`, `/explore/` etc. are rejected
+   - Up to **8 profiles per search**
+4. **Profile scrape** — reads `<meta name="description">` and `<meta property="og:title">` only (no JS execution, fast)
+   - Extracts name, handle, bio, emails
+5. **Location filter** — keeps only profiles where bio or title contains the target city/zip
+
+**Output columns:** `Nom Instagram · Handle · Bio · Email · Catégorie · URL`
+
+> ⚠️ Requires a live Instagram session in `chrome_scraper_profile/`. If the session expires, re-run and log in again when prompted.
 
 ---
 
@@ -182,6 +208,17 @@ When a trusted Facebook link is found:
 **Between each company:** randomized pause of **15–40 seconds** to avoid rate-limiting.
 
 **Resume:** progress saved to `filename.state.json` — re-run `npm run enrich` to continue from where it stopped.
+
+#### ④ contact@ fallback (post-processing)
+
+After the full loop completes, a final pass rewrites the enriched CSV:
+
+- For every row that has a `Site Web` but an empty `Email`
+- Extracts the root domain (`www.` stripped)
+- Injects `contact@<domain>` — filtered against the same email blacklist
+- Logged as: `✉️  12 email(s) contact@ ajouté(s) dans results_final_enriched.csv`
+
+> This fills the "has a site, no scraped email" gap without extra HTTP requests.
 
 ---
 

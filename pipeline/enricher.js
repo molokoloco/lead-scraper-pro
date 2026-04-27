@@ -300,6 +300,44 @@ async function enrichOne(page, biz) {
   return { emails, phones, site };
 }
 
+function getDomainFromUrl(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch { return ''; }
+}
+
+function fillMissingEmails(filePath) {
+  const rows = parseCSV(filePath);
+  if (rows.length === 0) return;
+
+  let count = 0;
+  const updated = rows.map(row => {
+    if (!row['Email'] && row['Site Web']) {
+      const domain = getDomainFromUrl(row['Site Web']);
+      if (domain && !EMAIL_BLACKLIST.some(d => domain.includes(d))) {
+        row['Email'] = `contact@${domain}`;
+        count++;
+      }
+    }
+    return row;
+  });
+
+  const header = 'Nom;Adresse;Téléphone;Site Web;Email;Facebook;Catégorie;Source';
+  const lines = updated.map(row => [
+    `"${row['Nom'] || ''}"`,
+    `"${row['Adresse'] || ''}"`,
+    `"${row['Téléphone'] || ''}"`,
+    `"${row['Site Web'] || ''}"`,
+    `"${row['Email'] || ''}"`,
+    `"${row['Facebook'] || ''}"`,
+    `"${row['Catégorie'] || ''}"`,
+    `"${row['Source'] || ''}"`
+  ].join(';'));
+
+  fs.writeFileSync(filePath, '﻿' + header + '\n' + lines.join('\n') + '\n', 'utf8');
+  console.log(`✉️  ${count} email(s) contact@ ajouté(s) dans ${path.basename(filePath)}`);
+}
+
 function cleanupOldEnrichedFiles() {
   const files = fs.readdirSync(DATA_DIR)
     .filter(f => f.endsWith('_enriched.csv') && f !== 'results_final_enriched.csv');
@@ -426,6 +464,7 @@ async function main() {
     }
 
     if (fs.existsSync(statePath)) fs.unlinkSync(statePath);
+    fillMissingEmails(outputPath);
   }
 
   if (!process.argv[2] || process.argv[2] === 'all') {
