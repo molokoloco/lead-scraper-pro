@@ -195,22 +195,25 @@ async function findEmailOnFacebook(page, businessName, location) {
     let phones = parsePhones(text);
     let site = firstValidLink(fbLinks);
 
-    // Si incomplet, on tente la section spécifique Contact & Basic Info
+    // Si incomplet, on tente les URLs de contact (profil perso ET page pro)
     if (emails.length === 0 && phones.length === 0 && !site) {
-      const contactUrl = profileBase.includes('profile.php')
-        ? `${profileBase}&sk=contact_info`
-        : `${profileBase}/directory_contact_info`;
+      const contactUrls = profileBase.includes('profile.php')
+        ? [`${profileBase}&sk=contact_info`]
+        : [`${profileBase}/about_contact_and_basic_info`, `${profileBase}/directory_contact_info`];
 
-      console.log(`      ↳ Testing Contact Info: ${contactUrl}`);
-      await page.goto(contactUrl, { waitUntil: 'domcontentloaded', timeout: 10000 });
-      await page.waitForTimeout(2000);
-      ({ text, fbLinks } = await page.evaluate(() => ({
-        text: document.body.innerText,
-        fbLinks: [...document.querySelectorAll('a[href]')].map(a => a.href)
-      })));
-      emails = parseEmails(text);
-      phones = parsePhones(text);
-      site = firstValidLink(fbLinks);
+      for (const contactUrl of contactUrls) {
+        console.log(`      ↳ Testing: ${contactUrl}`);
+        await page.goto(contactUrl, { waitUntil: 'domcontentloaded', timeout: 10000 });
+        await page.waitForTimeout(2000);
+        ({ text, fbLinks } = await page.evaluate(() => ({
+          text: document.body.innerText,
+          fbLinks: [...document.querySelectorAll('a[href]')].map(a => a.href)
+        })));
+        emails = parseEmails(text);
+        phones = parsePhones(text);
+        site = firstValidLink(fbLinks);
+        if (emails.length > 0 || phones.length > 0 || site) break;
+      }
     }
 
     return { emails, phones, site };

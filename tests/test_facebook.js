@@ -149,29 +149,31 @@ async function testFacebook(name, location) {
     console.log(`   📞 Téléphones: ${phones.length ? phones.join(', ') : '—'}`);
     console.log(`   🌐 Site Web  : ${site || '—'}`);
 
-    // Étape 4 : fallback contact_info si vide
+    // Étape 4 : fallback contact_info si vide (profil perso OU page pro)
     if (emails.length === 0 && phones.length === 0 && !site) {
-      const contactUrl = profileBase.includes('profile.php')
-        ? `${profileBase}&sk=contact_info`
-        : `${profileBase}/directory_contact_info`;
+      const contactUrls = profileBase.includes('profile.php')
+        ? [`${profileBase}&sk=contact_info`]
+        : [`${profileBase}/about_contact_and_basic_info`, `${profileBase}/directory_contact_info`];
 
-      console.log(`\n↳ Tentative Contact Info : ${contactUrl}`);
-      await page.goto(contactUrl, { waitUntil: 'domcontentloaded', timeout: 10000 });
-      await page.waitForTimeout(2000);
+      for (const contactUrl of contactUrls) {
+        console.log(`\n↳ Tentative : ${contactUrl}`);
+        await page.goto(contactUrl, { waitUntil: 'domcontentloaded', timeout: 10000 });
+        await page.waitForTimeout(2000);
 
-      ({ text, pageLinks } = await page.evaluate(() => ({
-        text: document.body.innerText,
-        pageLinks: [...document.querySelectorAll('a[href]')].map(a => a.href)
-      })));
+        ({ text, pageLinks } = await page.evaluate(() => ({
+          text: document.body.innerText,
+          pageLinks: [...document.querySelectorAll('a[href]')].map(a => a.href)
+        })));
 
-      emails = parseEmails(text);
-      phones = parsePhones(text);
-      site = firstValidLink(pageLinks);
+        emails = parseEmails(text);
+        phones = parsePhones(text);
+        site = firstValidLink(pageLinks);
 
-      console.log(`\n📊 Résultats depuis contact_info :`);
-      console.log(`   📧 Emails    : ${emails.length ? emails.join(', ') : '—'}`);
-      console.log(`   📞 Téléphones: ${phones.length ? phones.join(', ') : '—'}`);
-      console.log(`   🌐 Site Web  : ${site || '—'}`);
+        console.log(`   📧 Emails    : ${emails.length ? emails.join(', ') : '—'}`);
+        console.log(`   📞 Téléphones: ${phones.length ? phones.join(', ') : '—'}`);
+        console.log(`   🌐 Site Web  : ${site || '—'}`);
+        if (emails.length > 0 || phones.length > 0 || site) break;
+      }
     }
 
     await waitManual('\nAppuie sur ENTREE pour fermer...');
