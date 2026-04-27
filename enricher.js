@@ -199,7 +199,7 @@ async function findEmailOnFacebook(page, businessName, location) {
     if (emails.length === 0 && phones.length === 0 && !site) {
       const contactUrl = profileBase.includes('profile.php')
         ? `${profileBase}&sk=contact_info`
-        : `${profileBase}/about_contact_and_basic_info`;
+        : `${profileBase}/directory_contact_info`;
 
       console.log(`      ↳ Testing Contact Info: ${contactUrl}`);
       await page.goto(contactUrl, { waitUntil: 'domcontentloaded', timeout: 10000 });
