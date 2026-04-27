@@ -105,6 +105,7 @@ async function main() {
     await page.waitForTimeout(600 + Math.random() * 600);
   }
 
+  fs.mkdirSync(path.dirname(OUTPUT_FILE), { recursive: true });
   fs.writeFileSync(OUTPUT_FILE, csvLines.join('\n'), 'utf8');
   const withEmail = results.filter(r => r.emails.length > 0).length;
   console.log(`\n✓ Terminé — ${results.length} entreprises Cylex Pantin`);

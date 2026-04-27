@@ -146,6 +146,7 @@ async function main() {
     await page.waitForTimeout(1000 + Math.random() * 800);
   }
 
+  fs.mkdirSync(path.dirname(OUTPUT_FILE), { recursive: true });
   fs.writeFileSync(OUTPUT_FILE, csvLines.join('\n'), 'utf8');
   const withEmail = results.filter(r => r.emails).length;
   console.log(`\n✓ Terminé — ${results.length} profils Instagram Pantin`);

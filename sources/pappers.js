@@ -82,6 +82,7 @@ async function main() {
     await sleep(400 + Math.random() * 300);
   }
 
+  fs.mkdirSync(path.dirname(OUTPUT_FILE), { recursive: true });
   fs.writeFileSync(OUTPUT_FILE, csvLines.join('\n'), 'utf8');
   console.log(`\n✓ Terminé — ${results.length} entreprises Pantin uniques`);
   console.log(`  Fichier : ${OUTPUT_FILE}`);

@@ -93,6 +93,12 @@ function isBlacklisted(email) {
   return EMAIL_BL.some(b => e === b.toLowerCase());
 }
 
+function cleanPhone(raw) {
+  if (!raw) return '';
+  const matches = raw.match(/(?:\+33\s?|0)[1-9](?:[\s.\-]?\d{2}){4}/g);
+  return matches ? matches.join(' / ') : '';
+}
+
 function cleanEmails(raw) {
   if (!raw) return '';
   // On splitte par / , ; ou espace
@@ -100,6 +106,15 @@ function cleanEmails(raw) {
     .map(e => e.trim())
     .filter(e => e.length > 0 && e.includes('@') && !isBlacklisted(e))
     .join(',');
+}
+
+function isValidWebsite(url) {
+  if (!url) return false;
+  const normalized = url.trim().toLowerCase();
+  if (!normalized.startsWith('http')) return false;
+  if (normalized.includes('google.com/maps') || normalized.includes('maps.google.com') || normalized.includes('google.com/search')) return false;
+  if (normalized.includes('pagesjaunes.fr') || normalized.includes('facebook.com') || normalized.includes('instagram.com') || normalized.includes('tripadvisor.com') || normalized.includes('yelp.com')) return false;
+  return true;
 }
 
 // ─── Parse CSV (séparateur ; avec guillemets) ───
@@ -226,6 +241,7 @@ function addRow(nom, adresse, telephone, website, email, categorie, source) {
 
   const key = dedupKey(name, addr);
   const cleanedEmail = cleanEmails(email);
+  const cleanWebsite = isValidWebsite(website) ? website.trim() : '';
 
   if (seen.has(key)) {
     // Enrichir l'email si manquant
@@ -234,8 +250,8 @@ function addRow(nom, adresse, telephone, website, email, categorie, source) {
       existing.Email = cleanedEmail;
     }
     // Enrichir le site web si manquant
-    if (!existing['Site Web'] && website) {
-      existing['Site Web'] = website.trim();
+    if (!existing['Site Web'] && cleanWebsite) {
+      existing['Site Web'] = cleanWebsite;
     }
     // Ajouter source seulement si pas déjà présente
     if (!existing.Source.includes(source)) {
@@ -247,8 +263,8 @@ function addRow(nom, adresse, telephone, website, email, categorie, source) {
   const row = {
     Nom: name,
     Adresse: addr,
-    Téléphone: telephone.trim(),
-    'Site Web': website.trim(),
+    Téléphone: cleanPhone(telephone),
+    'Site Web': cleanWebsite,
     Email: cleanedEmail,
     Catégorie: normalizeCategory(categorie),
     Source: source

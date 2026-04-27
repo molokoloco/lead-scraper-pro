@@ -100,6 +100,7 @@ async function main() {
     await sleep(500);
   }
 
+  fs.mkdirSync(path.dirname(OUTPUT_FILE), { recursive: true });
   fs.writeFileSync(OUTPUT_FILE, csvLines.join('\n'), 'utf8');
 
   const noSite = results.filter(r => r.noSite === 'OUI');

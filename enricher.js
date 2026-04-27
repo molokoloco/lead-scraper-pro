@@ -28,6 +28,12 @@ const SKIP_DOMAINS = [
 /**
  * Parsing robuste des emails
  */
+function parsePhones(text) {
+  if (!text) return [];
+  const matches = text.match(/(?:\+33\s?|0)[1-9](?:[\s.\-]?\d{2}){4}/g) || [];
+  return [...new Set(matches)];
+}
+
 function parseEmails(text) {
   if (!text) return [];
   const emailRegex = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
@@ -37,7 +43,8 @@ function parseEmails(text) {
     const lower = email.toLowerCase();
     const isBlacklisted = EMAIL_BLACKLIST.some(domain => lower.includes(domain));
     const isSystem = ['noreply', 'no-reply', 'support@', 'info@sentry'].some(s => lower.startsWith(s));
-    return !isBlacklisted && !isSystem && email.length < 80 && !/\.(png|jpg|jpeg|gif|svg)$/.test(lower);
+    const isPlaceholder = /^(nom|prenom|nom\.prenom|prenom\.nom|nomprenom|prenomprenom|email|webmaster|admin)@(domaine|domain|exemple|example|entreprise|societe|société|site|web)\./i;
+    return !isBlacklisted && !isSystem && !isPlaceholder.test(lower) && email.length < 80 && !/\.(png|jpg|jpeg|gif|svg)$/.test(lower);
   });
 }
 
@@ -64,8 +71,32 @@ function getPhoneFromBiz(biz) {
   return biz['Téléphone(s)'] || biz['Téléphone'] || biz['phone'] || biz['phoneNumber'] || '';
 }
 
+function cleanWebsite(url) {
+  if (!url) return '';
+  const normalized = url.trim();
+  const lower = normalized.toLowerCase();
+  if (!lower.startsWith('http')) return '';
+  if (lower.includes('google.com/maps') || lower.includes('maps.google.com') || lower.includes('google.com/search')) return '';
+  if (lower.includes('pagesjaunes.fr') || lower.includes('facebook.com') || lower.includes('instagram.com') || lower.includes('tripadvisor.com') || lower.includes('yelp.com')) return '';
+  return normalized;
+}
+
 function getSiteFromBiz(biz) {
-  return biz['Site Web'] || biz['site web'] || biz['website'] || biz['URL'] || biz['URL Planity'] || biz['URL Cylex'] || biz['url'] || biz['site'] || '';
+  const fields = [
+    biz['Site Web'],
+    biz['site web'],
+    biz['website'],
+    biz['URL'],
+    biz['URL Planity'],
+    biz['URL Cylex'],
+    biz['url'],
+    biz['site']
+  ];
+  for (const field of fields) {
+    const cleaned = cleanWebsite(field);
+    if (cleaned) return cleaned;
+  }
+  return '';
 }
 let isFirstSearch = true;
 
@@ -135,66 +166,89 @@ async function findEmailOnFacebook(page, businessName, location) {
     await page.goto(fbUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
     await page.waitForTimeout(3000); 
     
-    let text = await page.evaluate(() => document.body.innerText);
+    let { text, fbLinks } = await page.evaluate(() => ({
+      text: document.body.innerText,
+      fbLinks: [...document.querySelectorAll('a[href]')].map(a => a.href)
+    }));
     let emails = parseEmails(text);
+    let phones = parsePhones(text);
+    let site = firstValidLink(fbLinks);
 
-    // Si pas d'email, on tente la section spécifique Contact & Basic Info
-    if (emails.length === 0) {
+    // Si incomplet, on tente la section spécifique Contact & Basic Info
+    if (emails.length === 0 && phones.length === 0 && !site) {
       const contactUrl = fbLink.includes('profile.php')
         ? fbUrl.replace('sk=about', 'sk=contact_info')
         : fbUrl.replace('/about', '/about_contact_and_basic_info');
-      
+
       console.log(`      ↳ Testing Contact Info: ${contactUrl}`);
       await page.goto(contactUrl, { waitUntil: 'domcontentloaded', timeout: 10000 });
       await page.waitForTimeout(2000);
-      text = await page.evaluate(() => document.body.innerText);
+      ({ text, fbLinks } = await page.evaluate(() => ({
+        text: document.body.innerText,
+        fbLinks: [...document.querySelectorAll('a[href]')].map(a => a.href)
+      })));
       emails = parseEmails(text);
+      phones = parsePhones(text);
+      site = firstValidLink(fbLinks);
     }
 
-    return emails;
+    return { emails, phones, site };
   } catch (err) {
     console.error(`      [FB Error] ${err.message}`);
     return [];
   }
 }
 
-async function visitPageForEmail(page, url) {
-  if (!url || url.includes('google.com')) return [];
+function firstValidLink(links) {
+  return links.find(url => url && !SKIP_DOMAINS.some(d => url.includes(d)) && cleanWebsite(url)) || '';
+}
+
+async function visitPage(page, url) {
+  if (!url || url.includes('google.com')) return { emails: [], phones: [] };
   try {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
     await page.waitForTimeout(2000);
     const text = await page.evaluate(() => document.body.innerText);
-    return parseEmails(text);
+    return { emails: parseEmails(text), phones: parsePhones(text) };
   } catch {
-    return [];
+    return { emails: [], phones: [] };
   }
 }
 
 async function enrichOne(page, biz) {
   const name = biz['Nom'] || biz['name'] || 'Inconnu';
   const location = config.location.name;
-  
+  const hasPhone = !!getPhoneFromBiz(biz);
+  const hasSite = !!getSiteFromBiz(biz);
+
   // 1. Google Search
   const { text, links } = await searchGoogle(page, `"${name}" "${location}" email contact`);
 
   let emails = parseEmails(text);
-  
+  let phones = hasPhone ? [] : parsePhones(text);
+  let site = hasSite ? '' : firstValidLink(links);
+
   // 2. Visit top links
-  if (emails.length === 0) {
+  if (emails.length === 0 || (!hasPhone && phones.length === 0)) {
     const topLinks = links.slice(0, 3);
     for (const url of topLinks) {
       if (!url || SKIP_DOMAINS.some(d => url.includes(d))) continue;
-      const found = await visitPageForEmail(page, url);
-      if (found.length > 0) { emails = found; break; }
+      const found = await visitPage(page, url);
+      if (emails.length === 0 && found.emails.length > 0) emails = found.emails;
+      if (!hasPhone && phones.length === 0 && found.phones.length > 0) phones = found.phones;
+      if (emails.length > 0 && (hasPhone || phones.length > 0)) break;
     }
   }
 
   // 3. Facebook Fallback
-  if (emails.length === 0) {
-    emails = await findEmailOnFacebook(page, name, location);
+  if (emails.length === 0 || (!hasPhone && phones.length === 0) || (!hasSite && !site)) {
+    const fb = await findEmailOnFacebook(page, name, location);
+    if (emails.length === 0) emails = fb.emails;
+    if (!hasPhone && phones.length === 0) phones = fb.phones;
+    if (!hasSite && !site && fb.site) site = fb.site;
   }
 
-  return emails;
+  return { emails, phones, site };
 }
 
 function cleanupOldEnrichedFiles() {
@@ -280,12 +334,17 @@ async function main() {
       process.stdout.write(`[${i + 1}/${rows.length}] ${name} ... `);
 
       try {
-        const emails = await enrichOne(page, biz);
+        const { emails, phones, site } = await enrichOne(page, biz);
         const emailStr = emails.join(',');
-        const phone = getPhoneFromBiz(biz);
-        const website = getSiteFromBiz(biz);
+        const phone = getPhoneFromBiz(biz) || phones[0] || '';
+        const website = getSiteFromBiz(biz) || site || '';
 
-        console.log(emails.length ? `✓ ${emails[0]}` : `—`);
+        const found = [
+          emails.length ? `📧 ${emails[0]}` : '',
+          !getPhoneFromBiz(biz) && phones[0] ? `📞 ${phones[0]}` : '',
+          !getSiteFromBiz(biz) && site ? `🌐 ${site}` : ''
+        ].filter(Boolean);
+        console.log(found.length ? found.join(' ') : `—`);
 
         const csvLine = [
           `"${name}"`,
