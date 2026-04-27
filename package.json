@@ -13,6 +13,14 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/molokoloco/lead-scraper-pro.git"
+  },
+  "bugs": {
+    "url": "https://github.com/molokoloco/lead-scraper-pro/issues"
+  },
+  "homepage": "https://github.com/molokoloco/lead-scraper-pro#readme",
   "type": "commonjs",
   "dependencies": {
     "playwright": "^1.59.1",
