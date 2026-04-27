@@ -1,9 +1,9 @@
-# 🚀 Lead Scraper Pro v2
+# 🚀 Lead Scraper Pro v2.1
 
 [![Node](https://img.shields.io/badge/node-%3E=18-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 [![Playwright](https://img.shields.io/badge/playwright-chromium-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev)
 [![Status](https://img.shields.io/badge/status-production-brightgreen)]()
-[![Version](https://img.shields.io/badge/version-1.0.0-blue)]()
+[![Version](https://img.shields.io/badge/version-2.1.0-blue)]()
 [![License](https://img.shields.io/badge/license-private-red)]()
 [![Made by](https://img.shields.io/badge/made%20by-JulienWeb.fr-5A4095)](https://julienweb.fr)
 

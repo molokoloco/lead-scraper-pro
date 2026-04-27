@@ -1,6 +1,6 @@
 {
-  "name": "scraper",
-  "version": "1.0.0",
+  "name": "lead-scraper-pro",
+  "version": "2.1.0",
   "description": "Système industriel de scraping et d'enrichissement de leads B2B avec multi-threading et fallback Facebook.",
   "main": "index.js",
   "scripts": {
