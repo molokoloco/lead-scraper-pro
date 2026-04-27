@@ -49,6 +49,25 @@ npm install
 npx playwright install chromium
 ```
 
+#### 🔐 Chrome profile setup (required for enrichment)
+
+The enricher (`npm run enrich`) runs a **visible Chrome window** with a persistent profile so you can solve captchas and stay logged in to Google and Facebook across runs.
+
+**One-time setup:**
+
+1. On first run, Chrome opens with a fresh profile stored in `chrome_scraper_profile/` (auto-created at the project root)
+2. **Log in to Google** — solve the first captcha if prompted, then sign in with your Google account
+3. **Log in to Facebook** — the enricher will pause on the FB login page; log in manually, then the script resumes automatically
+4. The profile is saved permanently — you only do this once
+
+> ⚠️ **Keep the `chrome_scraper_profile/` folder.** Deleting it means re-doing the logins.
+> Add it to `.gitignore` — never commit it (it contains your session cookies).
+
+```bash
+# .gitignore — make sure this line is present
+chrome_scraper_profile/
+```
+
 ---
 
 ### 📁 Project structure
