@@ -36,29 +36,57 @@ function isPantin(text) {
   return /pantin|93500/i.test(text);
 }
 
-async function searchInstagramProfiles(page, category) {
-  const query = `instagram ${category} pantin 93500`;
+async function searchGoogleInstagram(page, category) {
+  const query = `${category} ${LOCATION} site:instagram.com`;
+  const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&hl=fr&num=20`;
+  try {
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    await page.waitForTimeout(1500 + Math.random() * 1000);
+
+    return await page.evaluate(() => {
+      return [...document.querySelectorAll('h3')].map(h3 => {
+        const a = h3.closest('a') || h3.querySelector('a') || h3.parentElement?.closest('a');
+        return a ? { title: h3.innerText.trim(), realUrl: a.href } : null;
+      }).filter(r => r && r.realUrl && r.realUrl.includes('instagram.com/'));
+    });
+  } catch { return []; }
+}
+
+async function searchBingInstagram(page, category) {
+  const query = `${category} ${LOCATION} site:instagram.com`;
   const url = `https://www.bing.com/search?q=${encodeURIComponent(query)}&setlang=fr&cc=FR&mkt=fr-FR&count=20`;
   try {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
     await page.waitForTimeout(1500 + Math.random() * 1000);
 
-    const links = await page.evaluate(() => {
+    return await page.evaluate(() => {
       return [...document.querySelectorAll('li.b_algo h2 a')].map(a => {
         const href = a.href;
+        // Liens directs instagram.com
+        if (href.includes('instagram.com/')) return { title: a.innerText.trim(), realUrl: href };
+        // Liens encodés Bing (u=a1...)
         const match = href.match(/[?&]u=a1([A-Za-z0-9+/=_-]+)/);
-        let realUrl = '';
         if (match) {
           try {
             const b64 = match[1].replace(/-/g, '+').replace(/_/g, '/');
-            realUrl = atob(b64);
+            const realUrl = atob(b64);
+            if (realUrl.includes('instagram.com/')) return { title: a.innerText.trim(), realUrl };
           } catch(e) {}
         }
-        return { title: a.innerText.trim(), realUrl };
-      }).filter(r => r.realUrl && r.realUrl.includes('instagram.com'));
+        return null;
+      }).filter(Boolean);
     });
-    return links;
   } catch { return []; }
+}
+
+async function searchInstagramProfiles(page, category) {
+  // 1. Google en priorité (plus fiable pour site:instagram.com)
+  const googleResults = await searchGoogleInstagram(page, category);
+  if (googleResults.length > 0) return googleResults;
+
+  // 2. Fallback Bing
+  console.log(`      ↳ Google: 0 résultat, fallback Bing...`);
+  return await searchBingInstagram(page, category);
 }
 
 async function scrapeInstagramProfile(page, profileUrl) {
