@@ -1,6 +1,17 @@
 # 🚀 Lead Scraper Pro v2
+> **Version 1.0.0** — Système industriel de scraping et d'enrichissement de leads B2B avec multi-threading et fallback Facebook.
 
-Système industriel de scraping et d'enrichissement de leads B2B avec multi-threading et fallback Facebook.
+Ce projet permet de collecter, enrichir et fusionner des données de prospects B2B de manière automatisée et efficace.
+
+## 🛠️ Installation
+
+```bash
+# Installer les dépendances
+npm install
+
+# Installer les navigateurs Playwright
+npx playwright install chromium
+```
 
 ## 📁 Structure du Projet
 
@@ -12,7 +23,7 @@ Système industriel de scraping et d'enrichissement de leads B2B avec multi-thre
 
 ---
 
-## 🛠️ Workflow d'utilisation
+## 🚀 Workflow d'utilisation
 
 ### 1. Configuration
 Modifiez le fichier `config/index.js` pour pointer vers la version active (ex: `require('./v2_pro')`). 
@@ -37,9 +48,17 @@ npm run enrich
 ### 4. Fusion finale (Merge)
 Fusionnez tous les fichiers enrichis en un seul fichier propre et dédoublonné :
 ```bash
-node merge.js
+npm run merge
 ```
 Le résultat final sera généré dans `data/[VERSION]/results_final.csv`.
+
+---
+
+## 🧪 Tests
+Vous pouvez tester le scraper Google Maps séparément :
+```bash
+npm run test:google
+```
 
 ---
 
