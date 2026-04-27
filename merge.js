@@ -268,9 +268,9 @@ function addRow(nom, adresse, telephone, website, email, categorie, source, face
 }
 
 // ─── 1. Pages Jaunes ───
-console.log('→ Lecture results.csv ...');
+console.log('→ Lecture pagesjaunes_results.csv ...');
 try {
-  const pj = parseCSV(path.join(DATA, 'results.csv'));
+  const pj = parseCSV(path.join(DATA, 'pagesjaunes_results.csv'));
   pj.forEach(r => addRow(
     r['Nom'],
     r['Adresse'],

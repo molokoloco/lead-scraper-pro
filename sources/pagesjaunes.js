@@ -6,7 +6,7 @@ const config = require('../config');
 const CATEGORIES = config.categories;
 const LOCATION = config.location.name;
 const PANTIN_KEYWORDS = config.location.keywords;
-const OUTPUT_FILE = path.join(__dirname, '..', 'data', config.version, 'results.csv');
+const OUTPUT_FILE = path.join(__dirname, '..', 'data', config.version, 'pagesjaunes_results.csv');
 const MAX_PAGES_PER_CAT = 5;
 
 function buildUrl(category, pageNum = 1) {
