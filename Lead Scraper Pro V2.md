@@ -152,6 +152,21 @@ C'est le module le plus complexe, conçu pour maximiser le taux de découverte d
 3. **Enrich** : `npm run enrich` (Recherche des contacts).  
 4. **Merge** : `node merge.js` (Fichier final propre).
 
+
+---
+
+## **Doing B2B outreach in France? 🇫🇷**
+
+
+Lead Scraper Pro v2 collects + enriches prospects from Pages Jaunes, Pappers, Google Maps, Instagram… in a single workflow.
+
+3 commands: scan → enrich → merge.
+Open source, runs locally with Playwright. Bilingual EN/FR docs.
+
+https://github.com/molokoloco/lead-scraper-pro
+
+#buildInPublic #opensource
+
 ---
 
 *Ce système est conçu pour être à la fois puissant et respectueux des limites des moteurs de recherche grâce à l'intervention humaine ciblée.*
