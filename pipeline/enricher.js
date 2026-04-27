@@ -156,8 +156,8 @@ function getFBProfileBase(url) {
     if (parts[0] === 'pages' && parts.length >= 3) {
       return `https://www.facebook.com/pages/${parts[1]}/${parts[2]}`;
     }
-    // /username[/subpage...]  — mais pas si c'est juste "pages" sans ID
-    if (parts[0] && parts[0] !== 'pages') {
+    // /username[/subpage...]  — mais pas si c'est juste "pages" sans ID, ni sharer.php
+    if (parts[0] && parts[0] !== 'pages' && !parts[0].includes('sharer') && !parts[0].includes('share')) {
       return `https://www.facebook.com/${parts[0]}`;
     }
     return null;
@@ -250,7 +250,7 @@ async function visitPage(page, url) {
     // Extraire le premier lien FB qui pointe vers un profil (pas une URL générique)
     const fbLink = links.find(h => {
       const path = new URL(h).pathname.split('/').filter(Boolean);
-      return path.length >= 1 && path[0] !== 'sharer' && path[0] !== 'share' && path[0] !== 'plugins';
+      return path.length >= 1 && !path[0].includes('sharer') && !path[0].includes('share') && path[0] !== 'plugins';
     }) || '';
     return { emails: parseEmails(text), phones: parsePhones(text), fbLink };
   } catch {
