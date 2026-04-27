@@ -58,11 +58,11 @@ async function testGoogle(name, location) {
       const h3Links = [...document.querySelectorAll('h3')].map(h3 => {
         const a = h3.closest('a') || h3.querySelector('a') || h3.parentElement?.closest('a');
         return a ? a.href : null;
-      }).filter(h => h && h.startsWith('http') && !/.google(.|$|/)/.test(new URL(h).hostname));
+      }).filter(h => h && h.startsWith('http') && !((hn=>hn.endsWith('.google')||hn.includes('.google.'))(new URL(h).hostname)));
 
       const allLinks = [...document.querySelectorAll('a')]
         .map(el => el.href)
-        .filter(h => h && h.startsWith('http') && !/.google(.|$|/)/.test(new URL(h).hostname) && h.length > 30);
+        .filter(h => h && h.startsWith('http') && !((hn=>hn.endsWith('.google')||hn.includes('.google.'))(new URL(h).hostname)) && h.length > 30);
 
       return { text, links: [...new Set([...h3Links, ...allLinks])] };
     });
