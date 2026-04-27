@@ -3,7 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../config');
 
-const TOKEN = '***REMOVED***';
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+const TOKEN = process.env.PAPPERS_TOKEN;
+if (!TOKEN) throw new Error('PAPPERS_TOKEN manquant — créez un fichier .env à la racine du projet (voir .env.example)');
 const OUTPUT_FILE = path.join(__dirname, '..', 'data', config.version, 'pappers_results.csv');
 const QUERIES = config.pappersQueries;
 const ZIP = config.location.zip;
