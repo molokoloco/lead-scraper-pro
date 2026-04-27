@@ -268,6 +268,26 @@ Both test scripts accept optional `name` and `location` CLI arguments and mirror
 
 ---
 
+### 🛡️ Disclaimer
+
+> **This tool is provided for educational and professional automation purposes only.**
+
+By using, copying, forking or adapting this code, you agree to the following:
+
+1. **Personal responsibility** — You are solely responsible for how you use this tool and for any data you collect. The author cannot be held liable for any misuse, legal violations, or damages resulting from your use of this software.
+
+2. **Compliance** — It is your responsibility to ensure your usage complies with applicable laws in your jurisdiction, including but not limited to: GDPR (EU Regulation 2016/679), the French *Loi Informatique et Libertés*, each scraped platform's Terms of Service, and the CAN-SPAM / ePrivacy Directive for email outreach.
+
+3. **No warranty** — This software is provided **"as is"**, without warranty of any kind, express or implied. The author makes no guarantees regarding its accuracy, reliability, or fitness for any particular purpose.
+
+4. **Reasonable use** — You are expected to use this tool **responsibly and ethically**: reasonable request rates, no harassment, no bulk unsolicited messaging, no resale of collected data without consent.
+
+5. **No endorsement** — Publication of this code does not constitute an endorsement of scraping any particular website, nor an invitation to violate any platform's policies.
+
+**TL;DR** — Don't spam, don't abuse, don't blame me. Use it wisely. 🙏
+
+---
+
 ### 👤 Author
 
 **Julien Guézennec** — Freelance web developer & AI consultant since 1998
