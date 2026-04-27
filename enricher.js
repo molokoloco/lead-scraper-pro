@@ -394,11 +394,11 @@ async function main() {
         const website = getSiteFromBiz(biz) || site || '';
 
         const found = [
-          emails.length ? `📧 ${emails[0]}` : '',
+          emails.length ? `📧 ${emails.join(', ')}` : '',
           !getPhoneFromBiz(biz) && phones[0] ? `📞 ${phones[0]}` : '',
           !getSiteFromBiz(biz) && site ? `🌐 ${site}` : ''
         ].filter(Boolean);
-        console.log(found.length ? found.join(' ') : `—`);
+        console.log(found.length ? found.join(' | ') : `—`);
 
         const facebook = biz['Facebook'] || '';
         const csvLine = [
