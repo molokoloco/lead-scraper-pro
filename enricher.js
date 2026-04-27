@@ -377,7 +377,7 @@ async function main() {
     }
 
     if (startIndex === 0) {
-      fs.writeFileSync(outputPath, '\uFEFFNom;Adresse;Téléphone;Site Web;Email;Catégorie;Source\n', 'utf8');
+      fs.writeFileSync(outputPath, '\uFEFFNom;Adresse;Téléphone;Site Web;Email;Facebook;Catégorie;Source\n', 'utf8');
     }
 
     for (let i = startIndex; i < rows.length; i++) {
