@@ -1,5 +1,0 @@
-- [x] Create `enricher.js` with consolidated logic and resume capability
-- [x] Update `package.json` with an `enrich` script
-- [x] Verify path handling for files in the `data/` directory
-- [x] Test the resume functionality
-- [x] Verify stealth and email extraction logic
