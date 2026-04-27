@@ -63,7 +63,7 @@ async function scrapePage(page, url) {
       // Activité
       const activity = card.querySelector('.bi-activity-unit, [class*="activit"]')?.innerText?.trim() || '';
 
-      // Site web : liens externes (pas PagesJaunes, pas Google Maps, pas tel:)
+      // Site web : liens externes (pas PagesJaunes, pas Google Maps, pas tel:, pas réseaux sociaux)
       const websiteLink = [...card.querySelectorAll('a[href^="http"]')]
         .find(a => {
           const href = a.href.toLowerCase();
@@ -81,7 +81,13 @@ async function scrapePage(page, url) {
         });
       const website = websiteLink?.href || '';
 
-      return { name, address, phones, activity, website };
+      // Lien Facebook direct si présent sur la fiche
+      const fbLink = [...card.querySelectorAll('a[href*="facebook.com"]')]
+        .map(a => a.href)
+        .find(h => h.includes('facebook.com') && !h.includes('pagesjaunes'));
+      const facebook = fbLink || '';
+
+      return { name, address, phones, activity, website, facebook };
     }).filter(r => r.name);
   });
 
@@ -103,7 +109,7 @@ async function main() {
   const seen = new Set();
   const allResults = [];
 
-  const csvLines = ['Nom;Adresse;Téléphone;Site Web;Catégorie;Activité'];
+  const csvLines = ['Nom;Adresse;Téléphone;Site Web;Facebook;Catégorie;Activité'];
 
   console.log(`Scraping Pages Jaunes — ${LOCATION}`);
   console.log(`${CATEGORIES.length} catégories\n`);
@@ -126,7 +132,7 @@ async function main() {
           seen.add(key);
 
           const phoneStr = item.phones.join(' / ');
-          csvLines.push(`"${item.name}";"${item.address}";"${phoneStr}";"${item.website}";"${cat}";"${item.activity}"`);
+          csvLines.push(`"${item.name}";"${item.address}";"${phoneStr}";"${item.website}";"${item.facebook}";"${cat}";"${item.activity}"`);
           allResults.push({ ...item, searchCategory: cat });
           catCount++;
         }

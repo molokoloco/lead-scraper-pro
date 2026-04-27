@@ -234,7 +234,7 @@ function dedupKey(nom, adresse) {
 const seen = new Map(); // key → row
 const rows = [];
 
-function addRow(nom, adresse, telephone, website, email, categorie, source) {
+function addRow(nom, adresse, telephone, website, email, categorie, source, facebook = '') {
   const name = nom.trim();
   const addr = adresse.trim();
   if (!name) return;
@@ -242,21 +242,14 @@ function addRow(nom, adresse, telephone, website, email, categorie, source) {
   const key = dedupKey(name, addr);
   const cleanedEmail = cleanEmails(email);
   const cleanWebsite = isValidWebsite(website) ? website.trim() : '';
+  const cleanFacebook = (facebook || '').trim().includes('facebook.com') ? (facebook || '').trim() : '';
 
   if (seen.has(key)) {
-    // Enrichir l'email si manquant
     const existing = seen.get(key);
-    if (!existing.Email && cleanedEmail) {
-      existing.Email = cleanedEmail;
-    }
-    // Enrichir le site web si manquant
-    if (!existing['Site Web'] && cleanWebsite) {
-      existing['Site Web'] = cleanWebsite;
-    }
-    // Ajouter source seulement si pas déjà présente
-    if (!existing.Source.includes(source)) {
-      existing.Source += '+' + source;
-    }
+    if (!existing.Email && cleanedEmail) existing.Email = cleanedEmail;
+    if (!existing['Site Web'] && cleanWebsite) existing['Site Web'] = cleanWebsite;
+    if (!existing.Facebook && cleanFacebook) existing.Facebook = cleanFacebook;
+    if (!existing.Source.includes(source)) existing.Source += '+' + source;
     return;
   }
 
@@ -266,6 +259,7 @@ function addRow(nom, adresse, telephone, website, email, categorie, source) {
     Téléphone: cleanPhone(telephone),
     'Site Web': cleanWebsite,
     Email: cleanedEmail,
+    Facebook: cleanFacebook,
     Catégorie: normalizeCategory(categorie),
     Source: source
   };
@@ -284,7 +278,8 @@ try {
     r['Site Web'] || r['site web'] || r['website'] || '',
     r['Email'] || '',
     r['Catégorie'] || r['Activité'] || '',
-    'PagesJaunes'
+    'PagesJaunes',
+    r['Facebook'] || ''
   ));
   console.log(`   ${pj.length} lignes lues`);
 } catch(e) { console.log('   ERREUR:', e.message); }
@@ -401,7 +396,7 @@ const csvLines = ['Nom;Adresse;Téléphone;Site Web;Email;Avec Email;Catégorie
 finalRows.forEach(r => {
   const avecEmail = r.Email ? 'OUI' : '';
   const esc = v => '"' + (v || '').replace(/"/g, '""') + '"';
-  csvLines.push([r.Nom, r.Adresse, r.Téléphone, r['Site Web'], r.Email, avecEmail, r.Catégorie, r.Source].map(esc).join(';'));
+  csvLines.push([r.Nom, r.Adresse, r.Téléphone, r['Site Web'], r.Email, r.Facebook || '', avecEmail, r.Catégorie, r.Source].map(esc).join(';'));
 });
 
 fs.writeFileSync(OUTPUT, csvLines.join('\n'), 'utf8');

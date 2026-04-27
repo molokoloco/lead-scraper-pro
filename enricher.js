@@ -167,15 +167,11 @@ function getFBProfileBase(url) {
 /**
  * Fallback Facebook
  */
-async function findEmailOnFacebook(page, businessName, location) {
-  const query = `"${businessName}" site:facebook.com`;
-  const { links } = await searchGoogle(page, query);
-  
-  const fbLink = links.find(l => l.includes('facebook.com') && !l.includes('posts'));
-  if (!fbLink) return { emails: [], phones: [], site: '' };
-
+/**
+ * Visite un profil FB connu et extrait emails/phones/site
+ */
+async function extractFromFBProfile(page, fbLink) {
   try {
-    // Extraire la base du profil (ignorer /photos/xxx, /videos/xxx, etc.)
     const profileBase = getFBProfileBase(fbLink);
     if (!profileBase) return { emails: [], phones: [], site: '' };
 
@@ -183,7 +179,7 @@ async function findEmailOnFacebook(page, businessName, location) {
       ? `${profileBase}&sk=about`
       : `${profileBase}/about`;
 
-    console.log(`      ↳ Facebook Found: ${fbUrl}`);
+    console.log(`      ↳ Facebook: ${fbUrl}`);
     await page.goto(fbUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
     await page.waitForTimeout(3000);
 
@@ -195,7 +191,7 @@ async function findEmailOnFacebook(page, businessName, location) {
     let phones = parsePhones(text);
     let site = firstValidLink(fbLinks);
 
-    // Si incomplet, on tente les URLs de contact (profil perso ET page pro)
+    // Si incomplet, tente les URLs de contact (profil perso ET page pro)
     if (emails.length === 0 && phones.length === 0 && !site) {
       const contactUrls = profileBase.includes('profile.php')
         ? [`${profileBase}&sk=contact_info`]
@@ -223,19 +219,42 @@ async function findEmailOnFacebook(page, businessName, location) {
   }
 }
 
+async function findEmailOnFacebook(page, businessName) {
+  const query = `"${businessName}" site:facebook.com`;
+  const { links } = await searchGoogle(page, query);
+
+  const fbLink = links.find(l => l.includes('facebook.com') && !l.includes('posts'));
+  if (!fbLink) return { emails: [], phones: [], site: '' };
+
+  try {
+    return await extractFromFBProfile(page, fbLink);
+  } catch (err) {
+    console.error(`      [FB Error] ${err.message}`);
+    return { emails: [], phones: [], site: '' };
+  }
+}
+
 function firstValidLink(links) {
   return links.find(url => url && !SKIP_DOMAINS.some(d => url.includes(d)) && cleanWebsite(url)) || '';
 }
 
 async function visitPage(page, url) {
-  if (!url || url.includes('google.com')) return { emails: [], phones: [] };
+  if (!url || url.includes('google.com')) return { emails: [], phones: [], fbLink: '' };
   try {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
     await page.waitForTimeout(2000);
-    const text = await page.evaluate(() => document.body.innerText);
-    return { emails: parseEmails(text), phones: parsePhones(text) };
+    const { text, links } = await page.evaluate(() => ({
+      text: document.body.innerText,
+      links: [...document.querySelectorAll('a[href*="facebook.com"]')].map(a => a.href)
+    }));
+    // Extraire le premier lien FB qui pointe vers un profil (pas une URL générique)
+    const fbLink = links.find(h => {
+      const path = new URL(h).pathname.split('/').filter(Boolean);
+      return path.length >= 1 && path[0] !== 'sharer' && path[0] !== 'share' && path[0] !== 'plugins';
+    }) || '';
+    return { emails: parseEmails(text), phones: parsePhones(text), fbLink };
   } catch {
-    return { emails: [], phones: [] };
+    return { emails: [], phones: [], fbLink: '' };
   }
 }
 
@@ -253,21 +272,26 @@ async function enrichOne(page, biz) {
   let phones = hasPhone ? [] : parsePhones(text);
   let site = hasSite ? '' : firstValidLink(links);
 
-  // 2. Visit top links
-  if (emails.length === 0 || (!hasPhone && phones.length === 0)) {
+  // Lien FB fiable : depuis la source (PagesJaunes) ou depuis le site de l'entreprise
+  let knownFbLink = biz['Facebook'] || '';
+
+  // 2. Visit top links — on collecte aussi les liens FB trouvés sur leur site
+  if (emails.length === 0 || (!hasPhone && phones.length === 0) || !knownFbLink) {
     const topLinks = links.slice(0, 3);
     for (const url of topLinks) {
       if (!url || SKIP_DOMAINS.some(d => url.includes(d))) continue;
       const found = await visitPage(page, url);
       if (emails.length === 0 && found.emails.length > 0) emails = found.emails;
       if (!hasPhone && phones.length === 0 && found.phones.length > 0) phones = found.phones;
-      if (emails.length > 0 && (hasPhone || phones.length > 0)) break;
+      if (!knownFbLink && found.fbLink) knownFbLink = found.fbLink;
+      if (emails.length > 0 && (hasPhone || phones.length > 0) && knownFbLink) break;
     }
   }
 
-  // 3. Facebook Fallback
-  if (emails.length === 0 || (!hasPhone && phones.length === 0) || (!hasSite && !site)) {
-    const fb = await findEmailOnFacebook(page, name, location);
+  // 3. Facebook — seulement si on a un lien fiable (PagesJaunes ou site perso)
+  if (knownFbLink && (emails.length === 0 || (!hasPhone && phones.length === 0) || (!hasSite && !site))) {
+    console.log(`      ↳ FB link fiable trouvé: ${knownFbLink}`);
+    const fb = await extractFromFBProfile(page, knownFbLink);
     if (emails.length === 0) emails = fb.emails;
     if (!hasPhone && phones.length === 0) phones = fb.phones;
     if (!hasSite && !site && fb.site) site = fb.site;
@@ -376,12 +400,14 @@ async function main() {
         ].filter(Boolean);
         console.log(found.length ? found.join(' ') : `—`);
 
+        const facebook = biz['Facebook'] || '';
         const csvLine = [
           `"${name}"`,
           `"${biz['Adresse'] || biz['address'] || ''}"`,
           `"${phone}"`,
           `"${website}"`,
           `"${emailStr}"`,
+          `"${facebook}"`,
           `"${biz['Catégorie'] || biz['cat'] || ''}"`,
           `"${biz['Source'] || filename}"`
         ].join(';');
