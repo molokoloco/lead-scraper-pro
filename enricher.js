@@ -168,7 +168,7 @@ function getFBProfileBase(url) {
  * Fallback Facebook
  */
 async function findEmailOnFacebook(page, businessName, location) {
-  const query = `"${businessName}" "${location}" site:facebook.com`;
+  const query = `"${businessName}" site:facebook.com`;
   const { links } = await searchGoogle(page, query);
   
   const fbLink = links.find(l => l.includes('facebook.com') && !l.includes('posts'));
