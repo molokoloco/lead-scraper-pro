@@ -11,6 +11,10 @@ module.exports = {
     'kinésithérapeute',
     'expert-comptable'
   ],
+  // Catégories spécifiques à Planity
+  categoriesPlanity: [
+    'kinesitherapeute'
+  ],
   // Spécifique pour Pappers (NAF/Keywords)
   pappersQueries: [
     'kinésithérapeute',

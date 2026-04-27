@@ -10,17 +10,8 @@ const PANTIN_LAT = config.location.coords.lat;
 const PANTIN_LNG = config.location.coords.lng;
 const OUTPUT_FILE = path.join(__dirname, '..', 'data', config.version, 'planity_results.csv');
 
-// On garde ces catégories car elles sont spécifiques à Planity, mais on peut les mixer avec config.categories si besoin
-const CATEGORIES = [
-  'kinesitherapeute',
-  'osteopathe',
-  'coach',
-  'reflexologue',
-  'sophrologue',
-  'massage',
-  'bien_etre',
-  'inclassable'
-];
+// Catégories spécifiques à Planity
+const CATEGORIES = config.categoriesPlanity;
 
 function post(url, body) {
   return new Promise((res, rej) => {

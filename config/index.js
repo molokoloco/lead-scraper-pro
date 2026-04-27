@@ -1,4 +1,4 @@
 // Modifie ce fichier pour changer de version active
-const activeConfig = require('./v3_example'); //('./v2_pro');
+const activeConfig = require('./v2_pro'); //('./v3_example');
 
 module.exports = activeConfig;

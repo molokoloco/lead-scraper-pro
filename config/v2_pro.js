@@ -41,6 +41,16 @@ module.exports = {
     'isolation thermique', 'renovation energetique',
     'toilettage animaux', 'pension canine'
   ],
+  // Catégories spécifiques à Planity
+  categoriesPlanity: [
+    'kinesitherapeute',
+    'osteopathe',
+    'coach',
+    'reflexologue',
+    'sophrologue',
+    'massage',
+    'bien_etre'
+  ],
   // Spécifique pour Google Places
   googleTypes: [
     'general_contractor',
