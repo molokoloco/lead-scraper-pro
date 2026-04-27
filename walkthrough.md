@@ -38,7 +38,8 @@ Le script de fusion a été simplifié pour traiter les fichiers sources bruts.
 1. Modifier `config/index.js` pour activer la version souhaitée.
 2. Lancer `npm run scan` pour collecter les données brutes.
 3. Lancer `npm run enrich` pour fusionner, puis enrichir uniquement le fichier final.
-4. Optionnel : `npm run merge` pour reconstruire simplement `data/v2/results_final.csv`.
+
+> Optionnel : `npm run merge` reste disponible si vous voulez régénérer seulement `data/v2/results_final.csv` sans relancer l'enrichissement.
 
 ## 🧩 6. Ce que nous avons changé pendant cette session
 - Refonte du flux `enrich` pour qu'il commence par `merge`.

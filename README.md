@@ -51,8 +51,8 @@ npm run enrich
 - **Profile**: Uses a dedicated Chrome profile (`chrome_scraper_profile`) within the project.
 - **Intelligence**: Decodes Bing URLs and searches Facebook "About" pages if needed.
 
-### 4. Final Merge
-`npm run merge` reste disponible si vous souhaitez régénérer uniquement le fichier fusionné :
+### Fusion séparée (optionnelle)
+Si vous voulez régénérer uniquement le fichier fusionné sans relancer l'enrichissement complet :
 ```bash
 npm run merge
 ```
@@ -103,9 +103,10 @@ npx playwright install chromium
 1.  **Configuration** : Modifiez `config/index.js` pour choisir la cible.
 2.  **Scan** : `npm run scan` pour collecter les sources brutes.
 3.  **Enrichissement** : `npm run enrich` pour fusionner d'abord les résultats bruts, puis enrichir uniquement `results_final.csv`.
-4.  **Fusion** : `npm run merge` reste disponible pour regénérer le fichier fusionné `results_final.csv`.
 
 > Les fichiers `*_enriched.csv` intermédiaires ne sont plus nécessaires si vous utilisez le flux `npm run enrich`.
+
+4.  **Fusion séparée (optionnelle)** : `npm run merge` reste disponible pour regénérer le fichier fusionné `results_final.csv`.
 
 ---
 *Efficient & Powerful Lead Generation.*
