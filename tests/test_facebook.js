@@ -50,6 +50,24 @@ function firstValidLink(links) {
   return links.find(url => cleanWebsite(url)) || '';
 }
 
+function getFBProfileBase(url) {
+  try {
+    const u = new URL(url);
+    if (u.pathname.includes('profile.php')) {
+      const id = u.searchParams.get('id');
+      return id ? `https://www.facebook.com/profile.php?id=${id}` : null;
+    }
+    const parts = u.pathname.split('/').filter(Boolean);
+    if (parts[0] === 'pages' && parts.length >= 3) {
+      return `https://www.facebook.com/pages/${parts[1]}/${parts[2]}`;
+    }
+    if (parts[0] && parts[0] !== 'pages') {
+      return `https://www.facebook.com/${parts[0]}`;
+    }
+    return null;
+  } catch { return null; }
+}
+
 async function searchGoogleForFB(page, query) {
   const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&hl=fr`;
   console.log(`\n🔍 Google : ${query}`);
@@ -100,15 +118,8 @@ async function testFacebook(name, location) {
 
     console.log(`\n✅ Page Facebook trouvée : ${fbLink}`);
 
-    // Étape 3 : extraire la base du profil (ignorer /photos/xxx, /videos/xxx, etc.)
-    let profileBase;
-    if (fbLink.includes('profile.php')) {
-      const idMatch = fbLink.match(/id=([0-9]+)/);
-      profileBase = idMatch ? `https://www.facebook.com/profile.php?id=${idMatch[1]}` : null;
-    } else {
-      const slug = new URL(fbLink).pathname.split('/').filter(Boolean)[0];
-      profileBase = slug ? `https://www.facebook.com/${slug}` : null;
-    }
+    // Étape 3 : extraire la base du profil (ignorer /photos/xxx, /videos/xxx, /pages sans ID, etc.)
+    const profileBase = getFBProfileBase(fbLink);
 
     if (!profileBase) {
       console.log('❌ Impossible d\'extraire la base du profil Facebook.');

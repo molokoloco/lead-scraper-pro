@@ -140,6 +140,31 @@ async function searchGoogle(page, query) {
 }
 
 /**
+ * Extrait l'URL de base du profil Facebook depuis n'importe quel lien FB
+ * Gère : /username, /pages/Name/ID, profile.php?id=, sous-pages /photos /videos etc.
+ */
+function getFBProfileBase(url) {
+  try {
+    const u = new URL(url);
+    // profile.php?id=xxx
+    if (u.pathname.includes('profile.php')) {
+      const id = u.searchParams.get('id');
+      return id ? `https://www.facebook.com/profile.php?id=${id}` : null;
+    }
+    const parts = u.pathname.split('/').filter(Boolean);
+    // /pages/BusinessName/123456789[/subpage...]
+    if (parts[0] === 'pages' && parts.length >= 3) {
+      return `https://www.facebook.com/pages/${parts[1]}/${parts[2]}`;
+    }
+    // /username[/subpage...]  — mais pas si c'est juste "pages" sans ID
+    if (parts[0] && parts[0] !== 'pages') {
+      return `https://www.facebook.com/${parts[0]}`;
+    }
+    return null;
+  } catch { return null; }
+}
+
+/**
  * Fallback Facebook
  */
 async function findEmailOnFacebook(page, businessName, location) {
@@ -150,15 +175,8 @@ async function findEmailOnFacebook(page, businessName, location) {
   if (!fbLink) return { emails: [], phones: [], site: '' };
 
   try {
-    // Extraire la base du profil (ignorer les sous-pages /photos/xxx, /videos/xxx, etc.)
-    let profileBase;
-    if (fbLink.includes('profile.php')) {
-      const idMatch = fbLink.match(/id=([0-9]+)/);
-      profileBase = idMatch ? `https://www.facebook.com/profile.php?id=${idMatch[1]}` : null;
-    } else {
-      const slug = new URL(fbLink).pathname.split('/').filter(Boolean)[0];
-      profileBase = slug ? `https://www.facebook.com/${slug}` : null;
-    }
+    // Extraire la base du profil (ignorer /photos/xxx, /videos/xxx, etc.)
+    const profileBase = getFBProfileBase(fbLink);
     if (!profileBase) return { emails: [], phones: [], site: '' };
 
     const fbUrl = profileBase.includes('profile.php')
