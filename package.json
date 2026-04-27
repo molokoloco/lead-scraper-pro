@@ -10,8 +10,18 @@
     "merge": "node merge.js",
     "test:google": "node tests/test_google.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "scraping",
+    "lead-generation",
+    "b2b",
+    "automation",
+    "playwright",
+    "enrichment"
+  ],
+  "author": {
+    "name": "Julien Guézennec",
+    "url": "https://julienweb.fr"
+  },
   "license": "ISC",
   "repository": {
     "type": "git",
@@ -22,6 +32,9 @@
   },
   "homepage": "https://github.com/molokoloco/lead-scraper-pro#readme",
   "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "playwright": "^1.59.1",
     "playwright-extra": "^4.3.6",
