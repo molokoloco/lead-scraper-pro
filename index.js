@@ -2,17 +2,19 @@ const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-const SOURCES_DIR = path.join(__dirname, 'sources');
-const SCRIPTS = [
-  'planity.js',
-  'pappers.js',
-  'pagesjaunes.js',
-  'googlemaps.js',
-  'instagram.js',
-  'cylex.js'
-];
+const arg = process.argv[2];
 
-async function runAll() {
+if (arg === 'scan') {
+  const SOURCES_DIR = path.join(__dirname, 'sources');
+  const SCRIPTS = [
+    'planity.js',
+    'pappers.js',
+    'pagesjaunes.js',
+    'googlemaps.js',
+    'instagram.js',
+    'cylex.js'
+  ];
+
   console.log('🚀 Démarrage du scan complet des sources...\n');
   const start = Date.now();
 
@@ -40,6 +42,21 @@ async function runAll() {
   console.log('\n💡 Prochaines étapes recommandées :');
   console.log('1. Enrichir les emails et fusionner automatiquement : npm run enrich');
   console.log('2. Fusionner séparément si besoin : npm run merge');
+} else if (arg === 'merge') {
+  console.log('🚀 Démarrage du merge...\n');
+  try {
+    execSync(`node "${path.join(__dirname, 'pipeline', 'merge.js')}"`, { stdio: 'inherit' });
+  } catch (err) {
+    console.error(`❌ Erreur lors du merge`);
+  }
+} else if (arg === 'enrich') {
+  console.log('🚀 Démarrage de l\'enrichissement...\n');
+  try {
+    const args = process.argv.slice(3).join(' ');
+    execSync(`node "${path.join(__dirname, 'pipeline', 'enricher.js')}" ${args}`.trim(), { stdio: 'inherit' });
+  } catch (err) {
+    console.error(`❌ Erreur lors de l'enrichissement`);
+  }
+} else {
+  console.log('Usage: node index.js <scan|merge|enrich>');
 }
-
-runAll();

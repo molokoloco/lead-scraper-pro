@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "scan": "node run_all.js",
-    "enrich": "node enricher.js",
-    "merge": "node merge.js",
+    "scan": "node index.js scan",
+    "enrich": "node index.js enrich",
+    "merge": "node index.js merge",
     "test:google": "node tests/test_google.js"
   },
   "keywords": [

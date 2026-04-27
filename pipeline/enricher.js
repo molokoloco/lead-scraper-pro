@@ -2,11 +2,11 @@ const { chromium } = require('playwright');
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const config = require('./config');
+const config = require('../config');
 const readline = require('readline');
 
-const DATA_DIR = path.join(__dirname, 'data', config.version);
-const USER_DATA_DIR = path.join(__dirname, 'chrome_scraper_profile');
+const DATA_DIR = path.join(__dirname, '..', 'data', config.version);
+const USER_DATA_DIR = path.join(__dirname, '..', 'chrome_scraper_profile');
 const CONCURRENCY = 1; 
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });

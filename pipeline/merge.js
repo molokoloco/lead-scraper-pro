@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
-const config = require('./config');
+const config = require('../config');
 
-const DIR = __dirname;
+const DIR = path.join(__dirname, '..');
 const DATA = path.join(DIR, 'data', config.version);
 const OUTPUT = path.join(DATA, 'results_final.csv');
 
@@ -121,7 +121,7 @@ function isValidWebsite(url) {
 function parseCSV(file) {
   const raw = fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, '');
   const lines = raw.split('\n').filter(l => l.trim());
-  const headers = lines[0].split(';').map(h => h.replace(/^"|"$/g, '').trim());
+  const headers = lines[0].split(';').map(h => h.replace(/[\x00-\x1F\x7F]/g, '').replace(/^"|"$/g, '').trim());
   return lines.slice(1).map(line => {
     const vals = [];
     let cur = '', inQ = false;
@@ -235,8 +235,8 @@ const seen = new Map(); // key → row
 const rows = [];
 
 function addRow(nom, adresse, telephone, website, email, categorie, source, facebook = '') {
-  const name = nom.trim();
-  const addr = adresse.trim();
+  const name = (nom || '').trim();
+  const addr = (adresse || '').trim();
   if (!name) return;
 
   const key = dedupKey(name, addr);
@@ -274,7 +274,7 @@ try {
   pj.forEach(r => addRow(
     r['Nom'],
     r['Adresse'],
-    r['Téléphone(s)'] || '',
+    r['Téléphone'] || r['Téléphone(s)'] || '',
     r['Site Web'] || r['site web'] || r['website'] || '',
     r['Email'] || '',
     r['Catégorie'] || r['Activité'] || '',
@@ -291,7 +291,7 @@ try {
   pp.forEach(r => addRow(
     r['Nom'],
     r['Adresse'],
-    r['Téléphone(s)'] || '',
+    r['Téléphone'] || r['Téléphone(s)'] || '',
     r['Site Web'] || r['site web'] || r['website'] || '',
     r['Email'] || '',
     r['Catégorie'] || r['Activité'] || '',
@@ -307,7 +307,7 @@ try {
   pl.forEach(r => addRow(
     r['Nom'],
     r['Adresse'],
-    r['Téléphone(s)'] || '',
+    r['Téléphone'] || r['Téléphone(s)'] || '',
     r['Site Web'] || r['site web'] || r['website'] || '',
     r['Email'] || '',
     r['Catégorie'] || r['Activité'] || '',
@@ -323,7 +323,7 @@ try {
   cy.forEach(r => addRow(
     r['Nom'],
     r['Adresse'],
-    r['Téléphone'] || '',
+    r['Téléphone'] || r['Téléphone(s)'] || '',
     r['Site Web'] || r['website'] || '',
     r['Email'] || '',
     r['Catégorie'] || '',
@@ -392,7 +392,7 @@ rows.forEach(r => {
 });
 
 // ─── Écriture CSV final ───
-const csvLines = ['Nom;Adresse;Téléphone;Site Web;Email;Avec Email;Catégorie;Source'];
+const csvLines = ['\uFEFFNom;Adresse;Téléphone;Site Web;Email;Facebook;Avec Email;Catégorie;Source'];
 finalRows.forEach(r => {
   const avecEmail = r.Email ? 'OUI' : '';
   const esc = v => '"' + (v || '').replace(/"/g, '""') + '"';

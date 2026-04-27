@@ -10,6 +10,7 @@ chrome_scraper_profile/
 data/
 *.csv
 *.state.json
+*.gsheet
 
 # Fichiers système
 desktop.ini
