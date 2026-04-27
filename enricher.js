@@ -57,7 +57,7 @@ function parseCSV(filePath) {
   const lines = content.split('\n').filter(l => l.trim());
   if (lines.length === 0) return [];
 
-  const header = lines[0].split(';').map(h => h.trim());
+  const header = lines[0].split(';').map(h => h.trim().replace(/[\x00-\x1F\x7F]/g, ''));
   return lines.slice(1).map(line => {
     const cols = line.match(/(?:^|;)"((?:[^"]|"")*)"|(?:^|;)([^;]*)/g)?.map(c =>
       c.replace(/^;?"?|"?$/g, '').replace(/""/g, '"').trim()
@@ -147,25 +147,28 @@ async function findEmailOnFacebook(page, businessName, location) {
   const { links } = await searchGoogle(page, query);
   
   const fbLink = links.find(l => l.includes('facebook.com') && !l.includes('posts'));
-  if (!fbLink) return [];
+  if (!fbLink) return { emails: [], phones: [], site: '' };
 
   try {
-    let fbUrl = fbLink.split('?')[0].replace(/\/$/, '');
-    
-    // Gestion des deux types d'URLs Facebook
+    // Extraire la base du profil (ignorer les sous-pages /photos/xxx, /videos/xxx, etc.)
+    let profileBase;
     if (fbLink.includes('profile.php')) {
       const idMatch = fbLink.match(/id=([0-9]+)/);
-      if (idMatch) {
-        fbUrl = `https://www.facebook.com/profile.php?id=${idMatch[1]}&sk=about`;
-      }
+      profileBase = idMatch ? `https://www.facebook.com/profile.php?id=${idMatch[1]}` : null;
     } else {
-      fbUrl = fbUrl + '/about';
+      const slug = new URL(fbLink).pathname.split('/').filter(Boolean)[0];
+      profileBase = slug ? `https://www.facebook.com/${slug}` : null;
     }
+    if (!profileBase) return { emails: [], phones: [], site: '' };
+
+    const fbUrl = profileBase.includes('profile.php')
+      ? `${profileBase}&sk=about`
+      : `${profileBase}/about`;
 
     console.log(`      ↳ Facebook Found: ${fbUrl}`);
     await page.goto(fbUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
-    await page.waitForTimeout(3000); 
-    
+    await page.waitForTimeout(3000);
+
     let { text, fbLinks } = await page.evaluate(() => ({
       text: document.body.innerText,
       fbLinks: [...document.querySelectorAll('a[href]')].map(a => a.href)
@@ -176,9 +179,9 @@ async function findEmailOnFacebook(page, businessName, location) {
 
     // Si incomplet, on tente la section spécifique Contact & Basic Info
     if (emails.length === 0 && phones.length === 0 && !site) {
-      const contactUrl = fbLink.includes('profile.php')
-        ? fbUrl.replace('sk=about', 'sk=contact_info')
-        : fbUrl.replace('/about', '/about_contact_and_basic_info');
+      const contactUrl = profileBase.includes('profile.php')
+        ? `${profileBase}&sk=contact_info`
+        : `${profileBase}/about_contact_and_basic_info`;
 
       console.log(`      ↳ Testing Contact Info: ${contactUrl}`);
       await page.goto(contactUrl, { waitUntil: 'domcontentloaded', timeout: 10000 });
@@ -195,7 +198,7 @@ async function findEmailOnFacebook(page, businessName, location) {
     return { emails, phones, site };
   } catch (err) {
     console.error(`      [FB Error] ${err.message}`);
-    return [];
+    return { emails: [], phones: [], site: '' };
   }
 }
 
@@ -216,12 +219,13 @@ async function visitPage(page, url) {
 }
 
 async function enrichOne(page, biz) {
-  const name = biz['Nom'] || biz['name'] || 'Inconnu';
+  const name = biz['Nom'] || biz['name'] || '';
   const location = config.location.name;
   const hasPhone = !!getPhoneFromBiz(biz);
   const hasSite = !!getSiteFromBiz(biz);
 
-  // 1. Google Search
+  // 1. Google Search — skip si pas de nom
+  if (!name) return { emails: [], phones: [], site: '' };
   const { text, links } = await searchGoogle(page, `"${name}" "${location}" email contact`);
 
   let emails = parseEmails(text);
@@ -311,10 +315,14 @@ async function main() {
     const outputPath = path.join(DATA_DIR, filename.replace('.csv', '_enriched.csv'));
     const statePath = path.join(DATA_DIR, `${filename}.state.json`);
 
-    if (fs.existsSync(outputPath) && !fs.existsSync(statePath)) continue;
-
     const rows = parseCSV(inputPath);
     if (rows.length === 0) continue;
+
+    // Skip only if enriched file has as many data rows as input (truly complete)
+    if (fs.existsSync(outputPath) && !fs.existsSync(statePath)) {
+      const enrichedLines = fs.readFileSync(outputPath, 'utf8').split('\n').filter(l => l.trim()).length - 1;
+      if (enrichedLines >= rows.length) continue;
+    }
 
     console.log(`\n--- [ENRICHING] ${filename} ---`);
 
@@ -329,8 +337,9 @@ async function main() {
 
     for (let i = startIndex; i < rows.length; i++) {
       const biz = rows[i];
-      const name = biz['Nom'] || biz['name'] || 'Inconnu';
-      
+      const name = biz['Nom'] || biz['name'] || '';
+      if (!name) { console.log(`[${i + 1}/${rows.length}] ⚠️ Nom manquant, ligne ignorée`); continue; }
+
       process.stdout.write(`[${i + 1}/${rows.length}] ${name} ... `);
 
       try {

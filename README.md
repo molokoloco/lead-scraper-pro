@@ -7,6 +7,8 @@
 [![License](https://img.shields.io/badge/license-private-red)]()
 [![Made by](https://img.shields.io/badge/made%20by-JulienWeb.fr-5A4095)](https://julienweb.fr)
 
+![Logo Lead Scraper Pro](https://github.com/molokoloco/lead-scraper-pro/blob/main/Logo-Lead-Scraper-Pro.png?raw=true "Logo Lead Scraper Pro")
+
 > **Industrial-grade B2B prospecting pipeline** — multi-source scraping, dedup, enrichment.
 > One command, one clean CSV, ready for Mailchimp / CRM / Lemlist.
 
@@ -35,7 +37,6 @@ npm run enrich    # merge + enrich
 
 ![npm-run-scan 2](https://github.com/molokoloco/lead-scraper-pro/blob/main/npm-run-scan2.jpg?raw=true "Demo in progress")
 
-![npm-run-merge](https://github.com/molokoloco/lead-scraper-pro/blob/main/npm-run-merge.jpg?raw=true "Demo in progress")
 
 ---
 
