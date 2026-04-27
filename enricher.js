@@ -1,4 +1,5 @@
 const { chromium } = require('playwright'); 
+const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const config = require('./config');
@@ -59,7 +60,13 @@ function parseCSV(filePath) {
     return obj;
   });
 }
+function getPhoneFromBiz(biz) {
+  return biz['Téléphone(s)'] || biz['Téléphone'] || biz['phone'] || biz['phoneNumber'] || '';
+}
 
+function getSiteFromBiz(biz) {
+  return biz['Site Web'] || biz['site web'] || biz['website'] || biz['URL'] || biz['URL Planity'] || biz['URL Cylex'] || biz['url'] || biz['site'] || '';
+}
 let isFirstSearch = true;
 
 /**
@@ -190,17 +197,40 @@ async function enrichOne(page, biz) {
   return emails;
 }
 
+function cleanupOldEnrichedFiles() {
+  const files = fs.readdirSync(DATA_DIR)
+    .filter(f => f.endsWith('_enriched.csv') && f !== 'results_final_enriched.csv');
+
+  if (files.length === 0) return;
+  console.log('🧹 Nettoyage des anciens fichiers enrichis...');
+  files.forEach(file => {
+    try {
+      fs.unlinkSync(path.join(DATA_DIR, file));
+      console.log(`   ✂️ ${file}`);
+    } catch (err) {
+      console.warn(`   ⚠️ Impossible de supprimer ${file} : ${err.message}`);
+    }
+  });
+}
+
 async function main() {
   const arg = process.argv[2];
   let filesToProcess = [];
 
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-  if (arg && arg !== 'all') {
-    filesToProcess = [arg];
+  if (!arg || arg === 'all') {
+    console.log('🔀 Merge d abord, puis enrichissement du fichier fusionné.');
+    try {
+      execSync(`node "${path.join(__dirname, 'merge.js')}"`, { stdio: 'inherit' });
+    } catch (err) {
+      console.error('❌ Échec du merge :', err.message);
+      process.exit(1);
+    }
+
+    filesToProcess = ['results_final.csv'];
   } else {
-    filesToProcess = fs.readdirSync(DATA_DIR)
-      .filter(f => f.endsWith('.csv') && !f.includes('_enriched.csv'));
+    filesToProcess = [arg];
   }
 
   console.log(`🚀 Mode SÉCURISÉ GOOGLE [Version: ${config.version}]`);
@@ -240,7 +270,7 @@ async function main() {
     }
 
     if (startIndex === 0) {
-      fs.writeFileSync(outputPath, '\uFEFFNom;Adresse;Téléphone;Email;Catégorie;Source\n', 'utf8');
+      fs.writeFileSync(outputPath, '\uFEFFNom;Adresse;Téléphone;Site Web;Email;Catégorie;Source\n', 'utf8');
     }
 
     for (let i = startIndex; i < rows.length; i++) {
@@ -252,13 +282,16 @@ async function main() {
       try {
         const emails = await enrichOne(page, biz);
         const emailStr = emails.join(',');
+        const phone = getPhoneFromBiz(biz);
+        const website = getSiteFromBiz(biz);
 
         console.log(emails.length ? `✓ ${emails[0]}` : `—`);
 
         const csvLine = [
           `"${name}"`,
           `"${biz['Adresse'] || biz['address'] || ''}"`,
-          `"${biz['Téléphone'] || biz['phone'] || ''}"`,
+          `"${phone}"`,
+          `"${website}"`,
           `"${emailStr}"`,
           `"${biz['Catégorie'] || biz['cat'] || ''}"`,
           `"${biz['Source'] || filename}"`
@@ -278,6 +311,10 @@ async function main() {
     }
 
     if (fs.existsSync(statePath)) fs.unlinkSync(statePath);
+  }
+
+  if (!process.argv[2] || process.argv[2] === 'all') {
+    cleanupOldEnrichedFiles();
   }
 
   console.log('\n✨ TRAVAIL TERMINÉ. La fenêtre reste ouverte.');

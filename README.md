@@ -39,20 +39,24 @@ npm run scan
 Raw CSV files will be generated in `data/[VERSION]/`.
 
 ### 3. Enrichment (Email Discovery)
-Launch the intelligent enricher:
+Launch the intelligent enricher. It now runs `merge` first, then enriches only the merged file:
 ```bash
 npm run enrich
 ```
-- **Speed**: 3 companies processed simultaneously (Parallel Workers).
+- **Flux**: `npm run enrich` exécute d'abord `merge`, puis enrichit `data/[VERSION]/results_final.csv`.
+- **Sources utilisées par `merge`**: `results.csv`, `pappers_results.csv`, `planity_results.csv`, `cylex_results.csv`, `instagram_results.csv`.
+- **Sortie finale**: `data/[VERSION]/results_final_enriched.csv`.
+- **Maintenance**: les anciens fichiers `*_enriched.csv` ne sont plus nécessaires et peuvent être supprimés.
+- **Speed**: 3 companies processed sequentially by design to avoid captchas and rate limits.
 - **Profile**: Uses a dedicated Chrome profile (`chrome_scraper_profile`) within the project.
 - **Intelligence**: Decodes Bing URLs and searches Facebook "About" pages if needed.
 
 ### 4. Final Merge
-Merge all enriched files into a single, clean, deduplicated file:
+`npm run merge` reste disponible si vous souhaitez régénérer uniquement le fichier fusionné :
 ```bash
 npm run merge
 ```
-The final result will be generated in `data/[VERSION]/results_final.csv`.
+Le résultat intermédiaire sera généré dans `data/[VERSION]/results_final.csv`.
 
 ---
 
@@ -98,8 +102,10 @@ npx playwright install chromium
 
 1.  **Configuration** : Modifiez `config/index.js` pour choisir la cible.
 2.  **Scan** : `npm run scan` pour collecter les sources brutes.
-3.  **Enrichissement** : `npm run enrich` pour trouver les emails/sites.
-4.  **Fusion** : `npm run merge` pour le fichier final propre.
+3.  **Enrichissement** : `npm run enrich` pour fusionner d'abord les résultats bruts, puis enrichir uniquement `results_final.csv`.
+4.  **Fusion** : `npm run merge` reste disponible pour regénérer le fichier fusionné `results_final.csv`.
+
+> Les fichiers `*_enriched.csv` intermédiaires ne sont plus nécessaires si vous utilisez le flux `npm run enrich`.
 
 ---
 *Efficient & Powerful Lead Generation.*

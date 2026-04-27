@@ -219,7 +219,7 @@ function dedupKey(nom, adresse) {
 const seen = new Map(); // key → row
 const rows = [];
 
-function addRow(nom, adresse, telephone, email, categorie, source) {
+function addRow(nom, adresse, telephone, website, email, categorie, source) {
   const name = nom.trim();
   const addr = adresse.trim();
   if (!name) return;
@@ -233,6 +233,10 @@ function addRow(nom, adresse, telephone, email, categorie, source) {
     if (!existing.Email && cleanedEmail) {
       existing.Email = cleanedEmail;
     }
+    // Enrichir le site web si manquant
+    if (!existing['Site Web'] && website) {
+      existing['Site Web'] = website.trim();
+    }
     // Ajouter source seulement si pas déjà présente
     if (!existing.Source.includes(source)) {
       existing.Source += '+' + source;
@@ -240,32 +244,64 @@ function addRow(nom, adresse, telephone, email, categorie, source) {
     return;
   }
 
-  const row = { Nom: name, Adresse: addr, Téléphone: telephone.trim(), Email: cleanedEmail, Catégorie: normalizeCategory(categorie), Source: source };
+  const row = {
+    Nom: name,
+    Adresse: addr,
+    Téléphone: telephone.trim(),
+    'Site Web': website.trim(),
+    Email: cleanedEmail,
+    Catégorie: normalizeCategory(categorie),
+    Source: source
+  };
   seen.set(key, row);
   rows.push(row);
 }
 
-// ─── 1. Pages Jaunes enrichi ───
-console.log('→ Lecture results_enriched.csv ...');
+// ─── 1. Pages Jaunes ───
+console.log('→ Lecture results.csv ...');
 try {
-  const pj = parseCSV(path.join(DATA, 'results_enriched.csv'));
-  pj.forEach(r => addRow(r['Nom'], r['Adresse'], r['Téléphone(s)'] || '', r['Email'] || '', r['Catégorie'] || r['Activité'] || '', 'PagesJaunes'));
+  const pj = parseCSV(path.join(DATA, 'results.csv'));
+  pj.forEach(r => addRow(
+    r['Nom'],
+    r['Adresse'],
+    r['Téléphone(s)'] || '',
+    r['Site Web'] || r['site web'] || r['website'] || '',
+    r['Email'] || '',
+    r['Catégorie'] || r['Activité'] || '',
+    'PagesJaunes'
+  ));
   console.log(`   ${pj.length} lignes lues`);
 } catch(e) { console.log('   ERREUR:', e.message); }
 
-// ─── 2. Pappers enrichi ───
-console.log('→ Lecture pappers_enriched.csv ...');
+// ─── 2. Pappers ───
+console.log('→ Lecture pappers_results.csv ...');
 try {
-  const pp = parseCSV(path.join(DATA, 'pappers_enriched.csv'));
-  pp.forEach(r => addRow(r['Nom'], r['Adresse'], r['Téléphone(s)'] || '', r['Email'] || '', r['Catégorie'] || r['Activité'] || '', 'Pappers'));
+  const pp = parseCSV(path.join(DATA, 'pappers_results.csv'));
+  pp.forEach(r => addRow(
+    r['Nom'],
+    r['Adresse'],
+    r['Téléphone(s)'] || '',
+    r['Site Web'] || r['site web'] || r['website'] || '',
+    r['Email'] || '',
+    r['Catégorie'] || r['Activité'] || '',
+    'Pappers'
+  ));
   console.log(`   ${pp.length} lignes lues`);
 } catch(e) { console.log('   ERREUR:', e.message); }
 
-// ─── 3. Planity enrichi ───
-console.log('→ Lecture planity_enriched.csv ...');
+// ─── 3. Planity ───
+console.log('→ Lecture planity_results.csv ...');
 try {
-  const pl = parseCSV(path.join(DATA, 'planity_enriched.csv'));
-  pl.forEach(r => addRow(r['Nom'], r['Adresse'], r['Téléphone(s)'] || '', r['Email'] || '', r['Catégorie'] || r['Activité'] || '', 'Planity'));
+  const pl = parseCSV(path.join(DATA, 'planity_results.csv'));
+  pl.forEach(r => addRow(
+    r['Nom'],
+    r['Adresse'],
+    r['Téléphone(s)'] || '',
+    r['Site Web'] || r['site web'] || r['website'] || '',
+    r['Email'] || '',
+    r['Catégorie'] || r['Activité'] || '',
+    'Planity'
+  ));
   console.log(`   ${pl.length} lignes lues`);
 } catch(e) { console.log('   ERREUR:', e.message); }
 
@@ -273,7 +309,15 @@ try {
 console.log('→ Lecture cylex_results.csv ...');
 try {
   const cy = parseCSV(path.join(DATA, 'cylex_results.csv'));
-  cy.forEach(r => addRow(r['Nom'], r['Adresse'], r['Téléphone'] || '', r['Email'] || '', r['Catégorie'] || '', 'Cylex'));
+  cy.forEach(r => addRow(
+    r['Nom'],
+    r['Adresse'],
+    r['Téléphone'] || '',
+    r['Site Web'] || r['website'] || '',
+    r['Email'] || '',
+    r['Catégorie'] || '',
+    'Cylex'
+  ));
   console.log(`   ${cy.length} lignes lues`);
 } catch(e) { console.log('   ERREUR:', e.message); }
 
@@ -284,7 +328,7 @@ try {
   ig.forEach(r => {
     // Extraire adresse depuis la bio si possible
     const addr = (r['Bio'] || '').match(/\d+[^,\n]{0,40}(?:pantin|93500)/i)?.[0] || 'Pantin 93500';
-    addRow(r['Nom Instagram'], addr, '', r['Email'] || '', r['Catégorie'] || '', 'Instagram');
+    addRow(r['Nom Instagram'], addr, '', '', r['Email'] || '', r['Catégorie'] || '', 'Instagram');
   });
   console.log(`   ${ig.length} lignes lues`);
 } catch(e) { console.log('   ERREUR:', e.message); }
@@ -320,6 +364,10 @@ rows.forEach(r => {
     if (r.Téléphone && !existingRow.Téléphone.includes(r.Téléphone)) {
       existingRow.Téléphone += existingRow.Téléphone ? ' / ' + r.Téléphone : r.Téléphone;
     }
+    // Fusionner le site web si manquant
+    if (r['Site Web'] && !existingRow['Site Web']) {
+      existingRow['Site Web'] = r['Site Web'];
+    }
     // Fusionner les emails
     const allEmails = new Set([...existingRow.Email.split(','), ...emails]);
     existingRow.Email = [...allEmails].join(',');
@@ -333,11 +381,11 @@ rows.forEach(r => {
 });
 
 // ─── Écriture CSV final ───
-const csvLines = ['\uFEFFNom;Adresse;Téléphone;Email;Avec Email;Catégorie;Source'];
+const csvLines = ['Nom;Adresse;Téléphone;Site Web;Email;Avec Email;Catégorie;Source'];
 finalRows.forEach(r => {
   const avecEmail = r.Email ? 'OUI' : '';
   const esc = v => '"' + (v || '').replace(/"/g, '""') + '"';
-  csvLines.push([r.Nom, r.Adresse, r.Téléphone, r.Email, avecEmail, r.Catégorie, r.Source].map(esc).join(';'));
+  csvLines.push([r.Nom, r.Adresse, r.Téléphone, r['Site Web'], r.Email, avecEmail, r.Catégorie, r.Source].map(esc).join(';'));
 });
 
 fs.writeFileSync(OUTPUT, csvLines.join('\n'), 'utf8');

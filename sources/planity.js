@@ -70,7 +70,7 @@ async function searchCategory(category, page = 0) {
 async function main() {
   const seen = new Set();
   const results = [];
-  const csvLines = ['\uFEFFNom;Adresse;Téléphone;Email;Catégorie;URL Planity'];
+  const csvLines = ['Nom;Adresse;Téléphone;Email;Site Web;Catégorie;URL Planity'];
 
   console.log(`Planity Algolia — Pantin (2km)\n${CATEGORIES.length} catégories\n`);
 
@@ -100,7 +100,7 @@ async function main() {
         const planityUrl = `https://www.planity.com/${slug}`;
 
         results.push({ name, address, phone, email, cat, planityUrl, website });
-        csvLines.push(`"${name}";"${address}";"${phone}";"${email}";"${cat}";"${planityUrl}"`);
+        csvLines.push(`"${name}";"${address}";"${phone}";"${email}";"${website}";"${cat}";"${planityUrl}"`);
         catCount++;
       }
 

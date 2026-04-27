@@ -38,8 +38,8 @@ async function runAll() {
   console.log(`\n✨ TOUTES LES SOURCES ONT ÉTÉ SCANNNÉES EN ${duration} MINUTES.`);
   console.log('📂 Les fichiers CSV sont disponibles dans le dossier sources/ et data/.');
   console.log('\n💡 Prochaines étapes recommandées :');
-  console.log('1. Enrichir les emails : npm run enrich <nom_du_fichier.csv>');
-  console.log('2. Fusionner les résultats : node merge.js');
+  console.log('1. Enrichir les emails et fusionner automatiquement : npm run enrich');
+  console.log('2. Fusionner séparément si besoin : npm run merge');
 }
 
 runAll();
