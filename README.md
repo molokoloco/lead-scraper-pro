@@ -88,21 +88,29 @@ This path is configured in [`config/index.js`](config/index.js) via `chromeProfi
 ### 📁 Project structure
 
 ```
+index.js         — CLI entry point: node index.js <scan|merge|enrich>
 config/          — version, city, and category settings
-data/            — campaign storage by version (data/v1/, data/v2/, …)
-sources/         — scraper modules (PagesJaunes, Pappers, Google Maps, Instagram, Planity, Cylex)
-merge.js         — merges raw source CSVs into a deduplicated base file
-enricher.js      — enriches the merged file with emails, phones, and websites
-run_all.js       — runs all scrapers in sequence
-tests/           — standalone test scripts for Google and Facebook flows
+  index.js       — active config pointer (edit this to switch campaign)
+  v3_example.js  — annotated reference config
+  v5_bobigny.js  — latest campaign config (copy to create a new one)
+sources/         — scraper modules, one file per source
+  pagesjaunes.js — PagesJaunes.fr (Playwright headless, captures Facebook link)
+  pappers.js     — Pappers.fr (Playwright headless)
+  googlemaps.js  — Google Maps Places API (HTTP)
+  planity.js     — Planity.com (Algolia HTTP API)
+  instagram.js   — Instagram (Chrome persistent profile + stealth)
+  cylex.js       — Cylex.fr [disabled — bot detection]
+pipeline/        — post-scan processing
+  merge.js       — dedup + normalize raw CSVs → results_final.csv
+  enricher.js    — email/phone/website enrichment → results_final_enriched.csv
+data/            — campaign output, one subfolder per version (v1/, v2/, …)
+tests/           — standalone test scripts (Google, Facebook, Instagram…)
+images/          — screenshots used in this README
 ```
 
 ---
 
 ### 🔄 Pipeline A → Z
-
-Copy `./config/v5_bobigny.js` to `./config/v6_xxx.js` 
-Update `./config/index.js`
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -110,34 +118,34 @@ Update `./config/index.js`
 │                                                         │
 │  planity.js   ──► planity_results.csv                   │
 │  pappers.js   ──► pappers_results.csv                   │
-│  pagesjaunes  ──► results.csv  (+ Facebook links)       │
-│  googlemaps   ──► results.csv  (merged)                 │
+│  pagesjaunes  ──► pagesjaunes_results.csv               │
+│  googlemaps   ──► googlemaps_results.csv                │
 │  instagram.js ──► instagram_results.csv                 │
-│  cylex.js     ──► cylex_results.csv                     │
+│  cylex.js        [disabled — bot detection]             │
 │                         │                               │
-│  2. MERGE         merge.js                              │
+│  2. ENRICH        npm run enrich                        │
 │                         │                               │
-│       dedup by Name+Address key                         │
-│       consolidate by shared email                       │
-│       normalize categories                              │
-│                         ▼                               │
-│               results_final.csv                         │
+│     ┌── merge (automatic first pass) ──────────────┐   │
+│     │   dedup by Name+Address key                  │   │
+│     │   consolidate by shared email                │   │
+│     │   normalize categories                       │   │
+│     │            ▼                                 │   │
+│     │   results_final.csv                          │   │
+│     └──────────────────────────────────────────────┘   │
 │                         │                               │
-│  3. ENRICH        enricher.js                           │
+│     For each company (one by one):                      │
+│       ① Google search                                   │
+│       ② Visit top organic links                         │
+│       ③ Facebook (confirmed link only)                  │
 │                         │                               │
-│       For each company (one by one):                    │
-│         ① Google search                                 │
-│         ② Visit top organic links                       │
-│         ③ Facebook (confirmed link only)                │
-│                         │                               │
-│  4. POST-PROCESS  (after full loop)                     │
-│                         │                               │
-│       For rows with website but no email:               │
-│         ④ inject contact@domain.tld                     │
+│     Post-process (after full loop):                     │
+│       ④ inject contact@domain.tld (no email + site)     │
 │                         ▼                               │
 │          results_final_enriched.csv  ✅                 │
 └─────────────────────────────────────────────────────────┘
 ```
+
+> `npm run merge` is available as a standalone command if you need to regenerate `results_final.csv` without running the full enrichment.
 
 ---
 
