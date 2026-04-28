@@ -26,3 +26,6 @@ logs/
 
 # Environnement
 .env
+
+# Claude Code (settings locaux, mémoire, cache)
+.claude/
