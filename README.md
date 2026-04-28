@@ -134,7 +134,7 @@ Each scraper runs headless (or stealth) and writes its own CSV into `data/[VERSI
 
 | Script | Source | Method |
 |---|---|---|
-| `planity.js` | Planity.com | Playwright headless |
+| `planity.js` | Planity.com | Algolia HTTP API — categories from `config.categoriesPlanity` |
 | `pappers.js` | Pappers.fr | Playwright headless |
 | `pagesjaunes.js` | PagesJaunes.fr | Playwright headless — also captures Facebook profile link if present |
 | `googlemaps.js` | Google Maps API | HTTP |
@@ -272,9 +272,10 @@ module.exports = {
     coords: { lat: 48.8952, lng: 2.4008 },
     radius: 2000
   },
-  categories: ['coiffeur', 'boulangerie', 'kinésithérapeute'],
-  pappersQueries: ['coiffeur', 'boulangerie'],
-  googleTypes: ['hair_care', 'bakery', 'physiotherapist']
+  categories: ['coiffeur', 'boulangerie', 'kinésithérapeute'],   // PagesJaunes, Google Maps, Instagram
+  pappersQueries: ['coiffeur', 'boulangerie'],                   // Pappers only
+  googleTypes: ['hair_care', 'bakery', 'physiotherapist'],       // Google Maps API types
+  categoriesPlanity: ['kinesitherapeute', 'osteopathe']          // Planity only (slugs sans accent)
 };
 ```
 
