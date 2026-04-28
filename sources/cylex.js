@@ -5,7 +5,7 @@ const path = require('path');
 const config = require('../config');
 chromium.use(StealthPlugin());
 
-const USER_DATA_DIR = path.join(__dirname, '..', 'chrome_scraper_profile');
+const USER_DATA_DIR = config.chromeProfileDir;
 const OUTPUT_FILE = path.join(__dirname, '..', 'data', config.version, 'cylex_results.csv');
 const CATEGORIES = config.categories;
 const LOCATION_NAME = config.location.name;

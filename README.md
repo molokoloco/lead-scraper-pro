@@ -55,18 +55,23 @@ The enricher (`npm run enrich`) runs a **visible Chrome window** with a persiste
 
 **One-time setup:**
 
-1. On first run, Chrome opens with a fresh profile stored in `chrome_scraper_profile/` (auto-created at the project root)
+1. On first run, Chrome opens with the persistent profile defined in `config/index.js` → `chromeProfileDir`
 2. **Log in to Google** — solve the first captcha if prompted, then sign in with your Google account
 3. **Log in to Facebook** — the enricher will pause on the FB login page; log in manually, then the script resumes automatically
 4. The profile is saved permanently — you only do this once
 
-> ⚠️ **Keep the `chrome_scraper_profile/` folder.** Deleting it means re-doing the logins.
-> Add it to `.gitignore` — never commit it (it contains your session cookies).
+> ⚠️ **Keep the profile folder.** Deleting it means re-doing all logins.
+> Never commit it — it contains your session cookies.
 
-```bash
-# .gitignore — make sure this line is present
-chrome_scraper_profile/
+**Why the profile is stored outside the project:**
+
+After heavy use, the Chrome profile grows to **~16 000 files** (cache, IndexedDB, session data). Storing it inside a Google Drive–synced folder causes Drive to re-sync thousands of tiny files after every scraping session, which is slow and pointless. The profile is therefore kept at a local path outside of Google Drive:
+
 ```
+C:\Users\molok\Local Sites\chrome_scraper_profile
+```
+
+This path is configured in [`config/index.js`](config/index.js) via `chromeProfileDir`. To change it, edit that single line — all scripts pick it up automatically.
 
 ---
 
@@ -157,7 +162,7 @@ Runs Chrome in **visible + stealth mode** (same persistent profile as the enrich
 
 **Output columns:** `Handle · Email · Site · Catégorie · URL`
 
-> ⚠️ Requires a live Instagram session in `chrome_scraper_profile/`. If the session expires, re-run and log in again when prompted.
+> ⚠️ Requires a live Instagram session in the Chrome profile (`chromeProfileDir` in `config/index.js`). If the session expires, re-run and log in again when prompted.
 
 ---
 
@@ -299,7 +304,7 @@ Both test scripts accept optional `name` and `location` CLI arguments and mirror
 | Problem | Solution |
 |---|---|
 | Google captcha blocks | Visible mode — solve manually, script resumes automatically |
-| Facebook asks for login | Log in once, profile saved in `chrome_scraper_profile/` |
+| Facebook asks for login | Log in once, profile saved in `chromeProfileDir` (see `config/index.js`) |
 | Process interrupted | Re-run `npm run enrich` — resumes from `.state.json` |
 | Heavy rate-limiting | Increase the 15–40 s delay range in `enricher.js` |
 | Empty results | Check `config/index.js` points to the correct version file |
@@ -313,7 +318,7 @@ Both test scripts accept optional `name` and `location` CLI arguments and mirror
 - `npm run merge` is optional — only if you need to regenerate `results_final.csv` without enriching
 - Keep only `results_final_enriched.csv` as the final deliverable
 - Keep `.state.json` files while a run is in progress (resume cache)
-- One Chrome profile (`chrome_scraper_profile/`) is shared across all runs — keep it
+- One Chrome profile (path in `config/index.js` → `chromeProfileDir`) is shared across all runs — keep it
 
 ---
 

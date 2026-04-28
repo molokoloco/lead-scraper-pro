@@ -8,8 +8,7 @@ module.exports = {
     radius: 2000
   },
   categories: [
-    'kinésithérapeute',
-    'expert-comptable'
+    'kinésithérapeute'
   ],
   // Catégories spécifiques à Planity
   categoriesPlanity: [
@@ -17,12 +16,10 @@ module.exports = {
   ],
   // Spécifique pour Pappers (NAF/Keywords)
   pappersQueries: [
-    'kinésithérapeute',
-    'expert-comptable'
+    'kinésithérapeute'
   ],
   // Spécifique pour Google Places
   googleTypes: [
-    'physiotherapist',
-    'accounting'
+    'physiotherapist'
   ]
 };

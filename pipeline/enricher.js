@@ -6,7 +6,7 @@ const config = require('../config');
 const readline = require('readline');
 
 const DATA_DIR = path.join(__dirname, '..', 'data', config.version);
-const USER_DATA_DIR = path.join(__dirname, '..', 'chrome_scraper_profile');
+const USER_DATA_DIR = config.chromeProfileDir;
 const CONCURRENCY = 1; 
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });

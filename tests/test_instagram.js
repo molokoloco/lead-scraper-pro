@@ -2,10 +2,11 @@ const { chromium } = require('playwright-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const readline = require('readline');
 const path = require('path');
+const config = require('../config');
 
 chromium.use(StealthPlugin());
 
-const USER_DATA_DIR = path.join(__dirname, '..', 'chrome_scraper_profile');
+const USER_DATA_DIR = config.chromeProfileDir;
 const MAX_PROFILES_TO_SCRAPE = 3;
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });

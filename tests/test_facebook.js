@@ -3,7 +3,7 @@ const readline = require('readline');
 const path = require('path');
 const config = require('../config');
 
-const USER_DATA_DIR = path.join(__dirname, '..', 'chrome_scraper_profile');
+const USER_DATA_DIR = config.chromeProfileDir;
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 const waitManual = (msg) => new Promise(res => rl.question(`👉 ${msg}`, () => res()));
