@@ -12,7 +12,7 @@ if (arg === 'scan') {
     'pagesjaunes.js',
     'googlemaps.js',
     'instagram.js',
-    'cylex.js'
+    // 'cylex.js' // banni (bot detection)
   ];
 
   console.log('🚀 Démarrage du scan complet des sources...\n');

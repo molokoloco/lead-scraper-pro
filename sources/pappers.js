@@ -9,6 +9,8 @@ if (!TOKEN) throw new Error('PAPPERS_TOKEN manquant — créez un fichier .env �
 const OUTPUT_FILE = path.join(__dirname, '..', 'data', config.version, 'pappers_results.csv');
 const QUERIES = config.pappersQueries;
 const ZIP = config.location.zip;
+const LOCATION_NAME = config.location.name;
+const LOCATION_KEYWORDS = config.location.keywords;
 
 function get(url) {
   return new Promise((res, rej) => {
@@ -57,11 +59,10 @@ async function main() {
           const siege = r.siege || {};
           const nom = (r.nom_entreprise || r.denomination || `${r.prenom || ''} ${r.nom || ''}`).trim();
           const addr = siege.adresse_ligne_1 || '';
-          const cp = siege.code_postal || '93500';
-          const ville = (siege.ville || 'PANTIN').toUpperCase();
+          const cp = siege.code_postal || ZIP;
+          const ville = (siege.ville || LOCATION_KEYWORDS[0]).toUpperCase();
 
-          // Ne garder que Pantin
-          if (cp !== '93500' && !ville.includes('PANTIN')) continue;
+          if (cp !== ZIP && !LOCATION_KEYWORDS.some(k => ville.toLowerCase().includes(k))) continue;
 
           const naf = r.code_naf || '';
           const libelle = r.libelle_code_naf || '';
@@ -86,7 +87,7 @@ async function main() {
 
   fs.mkdirSync(path.dirname(OUTPUT_FILE), { recursive: true });
   fs.writeFileSync(OUTPUT_FILE, csvLines.join('\n'), 'utf8');
-  console.log(`\n✓ Terminé — ${results.length} entreprises Pantin uniques`);
+  console.log(`\n✓ Terminé — ${results.length} entreprises ${LOCATION_NAME} uniques`);
   console.log(`  Fichier : ${OUTPUT_FILE}`);
 }
 

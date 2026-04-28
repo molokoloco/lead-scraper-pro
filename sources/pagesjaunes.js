@@ -5,7 +5,7 @@ const config = require('../config');
 
 const CATEGORIES = config.categories;
 const LOCATION = config.location.name;
-const PANTIN_KEYWORDS = config.location.keywords;
+const LOCATION_KEYWORDS = config.location.keywords;
 const OUTPUT_FILE = path.join(__dirname, '..', 'data', config.version, 'pagesjaunes_results.csv');
 const MAX_PAGES_PER_CAT = 5;
 
@@ -15,9 +15,9 @@ function buildUrl(category, pageNum = 1) {
   return `https://www.pagesjaunes.fr/annuaire/chercherlespros?quoiqui=${q}&ou=${loc}&proximite=0&page=${pageNum}`;
 }
 
-function isPantin(address) {
+function isInLocation(address) {
   const lower = address.toLowerCase();
-  return PANTIN_KEYWORDS.some(k => lower.includes(k));
+  return LOCATION_KEYWORDS.some(k => lower.includes(k));
 }
 
 async function scrapePage(page, url) {
@@ -123,8 +123,8 @@ async function main() {
         const { items, hasMore } = await scrapePage(page, buildUrl(cat, p));
 
         for (const item of items) {
-          // Filtrer : uniquement Pantin
-          if (!isPantin(item.address)) continue;
+          // Filtrer : uniquement la ville ciblée
+          if (!isInLocation(item.address)) continue;
 
           // Dédoublonner
           const key = `${item.name}|${item.address}`;
@@ -145,7 +145,7 @@ async function main() {
       }
     }
 
-    console.log(`${catCount} résultats Pantin`);
+    console.log(`${catCount} résultats ${LOCATION}`);
     await page.waitForTimeout(800 + Math.random() * 800);
   }
 

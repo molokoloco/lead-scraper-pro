@@ -5,9 +5,12 @@ const path = require('path');
 const config = require('../config');
 chromium.use(StealthPlugin());
 
+const USER_DATA_DIR = path.join(__dirname, '..', 'chrome_scraper_profile');
 const OUTPUT_FILE = path.join(__dirname, '..', 'data', config.version, 'cylex_results.csv');
-const CATEGORIES = config.categories.map(c => c.replace(/ /g, '+'));
-const CITY = config.location.name.toLowerCase().split(' ')[0];
+const CATEGORIES = config.categories;
+const LOCATION_NAME = config.location.name;
+const CITY = LOCATION_NAME.toLowerCase().split(' ')[0];
+const LOCATION_REGEX = new RegExp(config.location.keywords.join('|'), 'i');
 
 const EMAIL_BL = ['cylex','google','bing','facebook','example','sentry','apple','microsoft','w3.org'];
 
@@ -16,25 +19,34 @@ function parseEmail(text) {
     .filter(e => !EMAIL_BL.some(d => e.includes(d)) && e.length < 80);
 }
 
+function toSlug(str) {
+  return str.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+}
+
 async function scrapeCylexCategory(page, category) {
-  const url = `https://www.cylex-locale.fr/${CITY}/${encodeURIComponent(category)}.html`;
+  const url = `https://www.cylex-locale.fr/${CITY}/${toSlug(category)}.html`;
+  console.log(`      [Cylex] URL: ${url}`);
   try {
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 12000 });
-    await page.waitForTimeout(1500);
+    await page.goto(url, { waitUntil: 'networkidle', timeout: 20000 });
+    await page.waitForTimeout(2000);
 
-    const status = await page.evaluate(() =>
-      document.title.includes('404') || document.body.innerText.includes('introuvable') ? '404' : 'OK'
-    );
-    if (status === '404') return [];
+    const pageInfo = await page.evaluate(() => ({
+      title: document.title,
+      url: location.href,
+      bodyLen: document.body.innerText.length,
+      allLinks: [...document.querySelectorAll('a[href]')].map(a => a.href).slice(0, 8)
+    }));
+    console.log(`      [Cylex] title="${pageInfo.title}" url=${pageInfo.url} bodyLen=${pageInfo.bodyLen}`);
+    console.log(`      [Cylex] liens bruts: ${pageInfo.allLinks.join(' | ')}`);
 
-    // Récupérer liens vers fiches individuelles
-    const businessLinks = await page.evaluate(() => {
-      return [...document.querySelectorAll('a[href*="/entreprises/"]')]
-        .map(a => a.href)
-        .filter(h => h.includes('cylex-locale.fr/entreprises/'));
-    });
+    if (pageInfo.title.includes('404') || pageInfo.bodyLen < 200) { console.log(`      [Cylex] Page vide/404`); return []; }
+
+    const businessLinks = pageInfo.allLinks.filter(h => h.includes('/entreprises/'));
     return [...new Set(businessLinks)];
-  } catch { return []; }
+  } catch (err) { console.log(`      [Cylex] Erreur: ${err.message}`); return []; }
 }
 
 async function scrapeCylexBusiness(page, url) {
@@ -61,11 +73,10 @@ async function scrapeCylexBusiness(page, url) {
 }
 
 async function main() {
-  const browser = await chromium.launch({ headless: true });
-  const ctx = await browser.newContext({
-    locale: 'fr-FR', timezoneId: 'Europe/Paris',
-    viewport: { width: 1280, height: 800 },
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  const ctx = await chromium.launchPersistentContext(USER_DATA_DIR, {
+    headless: false,
+    viewport: null,
+    executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
   });
   const page = await ctx.newPage();
 
@@ -73,7 +84,7 @@ async function main() {
   const results = [];
   const csvLines = ['\uFEFFNom;Adresse;Téléphone;Email;Site Web;Catégorie;URL Cylex'];
 
-  console.log(`Cylex — Pantin\n${CATEGORIES.length} catégories\n`);
+  console.log(`Cylex — ${LOCATION_NAME}\n${CATEGORIES.length} catégories\n`);
 
   for (const cat of CATEGORIES) {
     process.stdout.write(`→ "${cat}" ... `);
@@ -88,10 +99,12 @@ async function main() {
 
       await page.waitForTimeout(500 + Math.random() * 500);
       const biz = await scrapeCylexBusiness(page, link);
-      if (!biz || !biz.name) continue;
+      if (!biz || !biz.name) { console.log(`      [Cylex] Fiche vide: ${link}`); continue; }
 
-      // Garder seulement Pantin
-      if (!/pantin|93500/i.test(biz.address + biz.name + link)) continue;
+      if (!LOCATION_REGEX.test(biz.address + biz.name + link)) {
+        console.log(`      [Cylex] Filtré (hors zone): "${biz.name}" | addr: "${biz.address}"`);
+        continue;
+      }
 
       const emailStr = biz.emails.join(' / ');
       results.push({ ...biz, category: cat, url: link });
@@ -108,11 +121,11 @@ async function main() {
   fs.mkdirSync(path.dirname(OUTPUT_FILE), { recursive: true });
   fs.writeFileSync(OUTPUT_FILE, csvLines.join('\n'), 'utf8');
   const withEmail = results.filter(r => r.emails.length > 0).length;
-  console.log(`\n✓ Terminé — ${results.length} entreprises Cylex Pantin`);
+  console.log(`\n✓ Terminé — ${results.length} entreprises Cylex ${LOCATION_NAME}`);
   console.log(`  📧 Avec email : ${withEmail}`);
   console.log(`  Fichier : ${OUTPUT_FILE}`);
 
-  await browser.close();
+  await ctx.close();
 }
 
 main().catch(console.error);

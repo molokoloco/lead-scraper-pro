@@ -6,8 +6,9 @@ const config = require('../config');
 // Clés Algolia Planity (publiques, read-only)
 const ALGOLIA_APP_ID = 'DAY79MUBW3';
 const ALGOLIA_API_KEY = '8ec84cdda274cec79b9ad155973bc864';
-const PANTIN_LAT = config.location.coords.lat;
-const PANTIN_LNG = config.location.coords.lng;
+const LOCATION_NAME = config.location.name;
+const LAT = config.location.coords.lat;
+const LNG = config.location.coords.lng;
 const OUTPUT_FILE = path.join(__dirname, '..', 'data', config.version, 'planity_results.csv');
 
 // Catégories spécifiques à Planity
@@ -48,8 +49,8 @@ async function searchCategory(category, page = 0) {
   const body = {
     params: [
       `filters=plCategories:${category}`,
-      `aroundLatLng=${PANTIN_LAT},${PANTIN_LNG}`,
-      'aroundRadius=3000',  // 3km autour de Pantin
+      `aroundLatLng=${LAT},${LNG}`,
+      'aroundRadius=3000',
       'hitsPerPage=100',
       `page=${page}`,
       'attributesToRetrieve=name,address,slug,phoneNumber,description,email,contact,website,plCategories,openingHours',
@@ -63,7 +64,7 @@ async function main() {
   const results = [];
   const csvLines = ['Nom;Adresse;Téléphone;Email;Site Web;Catégorie;URL Planity'];
 
-  console.log(`Planity Algolia — Pantin (2km)\n${CATEGORIES.length} catégories\n`);
+  console.log(`Planity Algolia — ${LOCATION_NAME}\n${CATEGORIES.length} catégories\n`);
 
   for (const cat of CATEGORIES) {
     process.stdout.write(`→ ${cat} ... `);
@@ -111,7 +112,7 @@ async function main() {
   const withEmail = results.filter(r => r.email).length;
   const withWebsite = results.filter(r => r.website).length;
 
-  console.log(`\n✓ ${results.length} salons beauté/coiffure Pantin`);
+  console.log(`\n✓ ${results.length} salons beauté/coiffure ${LOCATION_NAME}`);
   console.log(`  📞 Avec téléphone : ${withPhone}`);
   console.log(`  📧 Avec email     : ${withEmail}`);
   console.log(`  🌐 Avec website   : ${withWebsite} (à exclure pour notre ciblage)`);

@@ -37,10 +37,11 @@ function decodeBingUrl(href) {
   } catch { return null; }
 }
 
+const LOCATION_REGEX = new RegExp(config.location.keywords.join('|'), 'i');
 const MAX_PROFILES_PER_SEARCH = 8;
 
-function isPantin(text) {
-  return /pantin|93500/i.test(text);
+function isInLocation(text) {
+  return LOCATION_REGEX.test(text);
 }
 
 // Accepte uniquement les URLs de profil racine : instagram.com/username/
@@ -191,7 +192,7 @@ async function main() {
   const results = [];
   const csvLines = ['\uFEFFNom Instagram;Handle;Bio;Email;Catégorie;URL'];
 
-  console.log(`Scraping Instagram — Pantin 93\n${CATEGORIES.length} catégories\n`);
+  console.log(`Scraping Instagram — ${LOCATION}\n${CATEGORIES.length} catégories\n`);
 
   await page.goto("https://www.instagram.com");
   console.log("\n--- Etape 1: Instagram ---");
@@ -213,12 +214,13 @@ async function main() {
       if (seenUrls.has(profileUrl)) continue;
       seenUrls.add(profileUrl);
 
-      await page.waitForTimeout(600 + Math.random() * 600);
+      const delay = Math.floor(Math.random() * (28000 - 7000 + 1) + 7000);
+      console.log(`☕ Pause de ${Math.round(delay/1000)}s...`);
+      await page.waitForTimeout(delay);
       const data = await scrapeInstagramProfile(page, profileUrl);
       if (!data) continue;
 
-      // Filtrer sur Pantin dans la bio
-      if (!isPantin(data.bio) && !isPantin(title)) continue;
+      if (!isInLocation(data.bio) && !isInLocation(title)) continue;
 
       const handle = profileUrl.replace('https://www.instagram.com/', '').replace('/', '');
       const emails = parseEmail(data.emails.join(' ') + ' ' + data.bio);
@@ -241,14 +243,14 @@ async function main() {
       }
     }
 
-    console.log(`→ ${catCount} profils Pantin`);
-    await page.waitForTimeout(1000 + Math.random() * 800);
+    console.log(`→ ${catCount} profils ${LOCATION}`);
+    await page.waitForTimeout(2000 + Math.random() * 1500);
   }
 
   fs.mkdirSync(path.dirname(OUTPUT_FILE), { recursive: true });
   fs.writeFileSync(OUTPUT_FILE, csvLines.join('\n'), 'utf8');
   const withEmail = results.filter(r => r.emails).length;
-  console.log(`\n✓ Terminé — ${results.length} profils Instagram Pantin`);
+  console.log(`\n✓ Terminé — ${results.length} profils Instagram ${LOCATION}`);
   console.log(`  dont ${withEmail} avec email`);
   console.log(`  Fichier : ${OUTPUT_FILE}`);
 

@@ -8,7 +8,8 @@ const API_KEY = process.env.GOOGLE_API_KEY || 'VOTRE_CLE_ICI';
 
 const OUTPUT_FILE = path.join(__dirname, '..', 'data', config.version, 'googlemaps_results.csv');
 
-// Centre de la recherche
+const LOCATION_NAME = config.location.name;
+const LOCATION_REGEX = new RegExp(config.location.keywords.join('|'), 'i');
 const LAT = config.location.coords.lat;
 const LNG = config.location.coords.lng;
 const RADIUS = config.location.radius || 2000;
@@ -50,7 +51,7 @@ async function main() {
   const results = [];
   const csvLines = ['\uFEFFNom;Adresse;Téléphone;Site Web;Email;Sans site;Type;Place ID'];
 
-  console.log(`Google Maps Places API — Pantin ${LAT},${LNG} rayon ${RADIUS}m\n`);
+  console.log(`Google Maps Places API — ${LOCATION_NAME} ${LAT},${LNG} rayon ${RADIUS}m\n`);
 
   for (const type of PLACE_TYPES) {
     process.stdout.write(`→ ${type} ... `);
@@ -84,8 +85,7 @@ async function main() {
         const website = r.website || '';
         const noSite = !website ? 'OUI' : 'non';
 
-        // Ne garder que Pantin
-        if (!/pantin|93500/i.test(address + name)) continue;
+        if (!LOCATION_REGEX.test(address + name)) continue;
 
         results.push({ name, address, phone, website, noSite, type });
         csvLines.push(`"${name}";"${address}";"${phone}";"${website}";"";"${noSite}";"${type}";"${place.place_id}"`);
@@ -96,7 +96,7 @@ async function main() {
       pages++;
     } while (pageToken && pages < 3);
 
-    console.log(`${typeCount} à Pantin`);
+    console.log(`${typeCount} à ${LOCATION_NAME}`);
     await sleep(500);
   }
 
@@ -104,7 +104,7 @@ async function main() {
   fs.writeFileSync(OUTPUT_FILE, csvLines.join('\n'), 'utf8');
 
   const noSite = results.filter(r => r.noSite === 'OUI');
-  console.log(`\n✓ Terminé — ${results.length} lieux Pantin trouvés`);
+  console.log(`\n✓ Terminé — ${results.length} lieux ${LOCATION_NAME} trouvés`);
   console.log(`  🚫 Sans site web : ${noSite.length}`);
   console.log(`  Fichier : ${OUTPUT_FILE}`);
 }
