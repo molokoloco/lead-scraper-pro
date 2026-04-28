@@ -133,7 +133,7 @@ Each scraper runs headless (or stealth) and writes its own CSV into `data/[VERSI
 | `pappers.js` | Pappers.fr | Playwright headless |
 | `pagesjaunes.js` | PagesJaunes.fr | Playwright headless — also captures Facebook profile link if present |
 | `googlemaps.js` | Google Maps API | HTTP |
-| `instagram.js` | Instagram | Chrome persistent profile (stealth) — manual login → Google `site:instagram.com` → fallback Bing — profile URL validation → meta tag extraction |
+| `instagram.js` | Instagram | Chrome persistent profile (stealth) — manual login → Google `site:instagram.com` → fallback Bing — profile URL validation → meta tag + DOM link extraction |
 | `cylex.js` | Cylex.fr | Playwright headless |
 
 #### `instagram.js` — detail
@@ -149,11 +149,13 @@ Runs Chrome in **visible + stealth mode** (same persistent profile as the enrich
    - If 0 valid profiles → **Bing fallback** with Bing URL base64-decode
    - Profile URL validation: only `instagram.com/<username>/` accepted — `/p/`, `/reel/`, `/stories/`, `/explore/` etc. are rejected
    - Up to **8 profiles per search**
-4. **Profile scrape** — reads `<meta name="description">` and `<meta property="og:title">` only (no JS execution, fast)
-   - Extracts name, handle, bio, emails
-5. **Location filter** — keeps only profiles where bio or title contains the target city/zip
+4. **Profile scrape** — reads `<meta name="description">` (contains bio + follower counts) and scans DOM links:
+   - **Email** — extracted from the meta description text
+   - **Website** — decoded from `l.instagram.com/l.php?u=` redirect links in the DOM (the "link in bio" field)
+   - Bio and display name are **not kept** in the output
+5. **Location filter** — keeps only profiles where the meta description or search title contains the target city/zip
 
-**Output columns:** `Nom Instagram · Handle · Bio · Email · Catégorie · URL`
+**Output columns:** `Handle · Email · Site · Catégorie · URL`
 
 > ⚠️ Requires a live Instagram session in `chrome_scraper_profile/`. If the session expires, re-run and log in again when prompted.
 

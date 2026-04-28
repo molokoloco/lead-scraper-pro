@@ -1,4 +1,4 @@
-const { chromium } = require('playwright-extra');
+﻿const { chromium } = require('playwright-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const fs = require('fs');
 const path = require('path');
@@ -162,20 +162,29 @@ async function scrapeInstagramProfile(page, profileUrl) {
 
     return await page.evaluate(() => {
       const metaDesc = document.querySelector('meta[name="description"]')?.content || '';
-      const ogTitle = document.querySelector('meta[property="og:title"]')?.content || '';
 
-      // Email dans meta description (bio Instagram)
       const emailRegex = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
       const emails = (metaDesc.match(emailRegex) || []);
 
-      // Extraire nom, followers depuis meta
-      // Format: "X Followers, Y Following, Z Posts - NOM (@handle) on Instagram: "bio""
-      const nameMatch = metaDesc.match(/Posts - (.+?) \(@/);
-      const name = nameMatch ? nameMatch[1].trim() : ogTitle.replace(' • Instagram', '').trim();
-      const bioMatch = metaDesc.match(/on Instagram: [""](.+?)[""]$/s);
-      const bio = bioMatch ? bioMatch[1].trim() : metaDesc;
+      // Site web : liens externes passant par le redirect Instagram ou mailto
+      const sites = [...new Set(
+        [...document.querySelectorAll('a[href]')]
+          .map(a => {
+            const href = a.href;
+            if (href.startsWith('mailto:')) return null;
+            if (href.includes('l.instagram.com/l.php')) {
+              try { return decodeURIComponent(new URL(href).searchParams.get('u') || ''); }
+              catch { return null; }
+            }
+            if (href.startsWith('http') && !href.includes('instagram.com') && !href.includes('facebook.com')) {
+              return href.split('?')[0];
+            }
+            return null;
+          })
+          .filter(Boolean)
+      )];
 
-      return { name, bio, emails, metaDesc };
+      return { emails, sites, metaDesc };
     });
   } catch { return null; }
 }
@@ -190,7 +199,7 @@ async function main() {
 
   const seenUrls = new Set();
   const results = [];
-  const csvLines = ['\uFEFFNom Instagram;Handle;Bio;Email;Catégorie;URL'];
+  const csvLines = ['\uFEFFHandle;Email;Site;Catégorie;URL'];
 
   console.log(`Scraping Instagram — ${LOCATION}\n${CATEGORIES.length} catégories\n`);
 
@@ -220,26 +229,26 @@ async function main() {
       const data = await scrapeInstagramProfile(page, profileUrl);
       if (!data) continue;
 
-      if (!isInLocation(data.bio) && !isInLocation(title)) continue;
+      if (!isInLocation(data.metaDesc) && !isInLocation(title)) continue;
 
       const handle = profileUrl.replace('https://www.instagram.com/', '').replace('/', '');
-      const emails = parseEmail(data.emails.join(' ') + ' ' + data.bio);
+      const emails = parseEmail(data.emails.join(' ') + ' ' + data.metaDesc);
+      const site = (data.sites || [])[0] || '';
 
       const row = {
-        name: data.name || title,
-        handle,
-        bio: data.bio.replace(/\n/g, ' ').substring(0, 200),
+        handle: `@${handle}`,
         emails: emails.join(' / '),
+        site,
         category: cat,
         url: profileUrl
       };
 
       results.push(row);
-      csvLines.push(`"${row.name}";"${row.handle}";"${row.bio}";"${row.emails}";"${row.category}";"${row.url}"`);
+      csvLines.push(`"${row.handle}";"${row.emails}";"${row.site}";"${row.category}";"${row.url}"`);
       catCount++;
 
       if (emails.length > 0) {
-        process.stdout.write(`✓ ${data.name} (${emails.join(', ')}) `);
+        process.stdout.write(`✓ @${handle} (${emails.join(', ')}) `);
       }
     }
 

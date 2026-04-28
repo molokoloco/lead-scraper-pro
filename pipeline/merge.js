@@ -337,9 +337,7 @@ console.log('→ Lecture instagram_results.csv ...');
 try {
   const ig = parseCSV(path.join(DATA, 'instagram_results.csv'));
   ig.forEach(r => {
-    // Extraire adresse depuis la bio si possible
-    const addr = (r['Bio'] || '').match(/\d+[^,\n]{0,40}(?:pantin|93500)/i)?.[0] || 'Pantin 93500';
-    addRow(r['Nom Instagram'], addr, '', '', r['Email'] || '', r['Catégorie'] || '', 'Instagram');
+    addRow(r['Handle'], config.location.name, '', r['Site'] || '', r['Email'] || '', r['Catégorie'] || '', 'Instagram');
   });
   console.log(`   ${ig.length} lignes lues`);
 } catch(e) { console.log('   ERREUR:', e.message); }

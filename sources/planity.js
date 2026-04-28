@@ -62,7 +62,7 @@ async function searchCategory(category, page = 0) {
 async function main() {
   const seen = new Set();
   const results = [];
-  const csvLines = ['Nom;Adresse;Téléphone;Email;Site Web;Catégorie;URL Planity'];
+  const csvLines = ['﻿Nom;Adresse;Téléphone;Email;Site Web;Catégorie;URL Planity'];
 
   console.log(`Planity Algolia — ${LOCATION_NAME}\n${CATEGORIES.length} catégories\n`);
 

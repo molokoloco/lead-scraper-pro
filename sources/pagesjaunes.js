@@ -109,7 +109,7 @@ async function main() {
   const seen = new Set();
   const allResults = [];
 
-  const csvLines = ['Nom;Adresse;Téléphone;Site Web;Facebook;Catégorie;Activité'];
+  const csvLines = ['﻿Nom;Adresse;Téléphone;Site Web;Facebook;Catégorie;Activité'];
 
   console.log(`Scraping Pages Jaunes — ${LOCATION}`);
   console.log(`${CATEGORIES.length} catégories\n`);
