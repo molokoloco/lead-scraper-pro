@@ -4,7 +4,7 @@
 [![Playwright](https://img.shields.io/badge/playwright-chromium-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev)
 [![Status](https://img.shields.io/badge/status-production-brightgreen)]()
 [![Version](https://img.shields.io/badge/version-2.1.0-blue)]()
-[![License](https://img.shields.io/badge/license-private-red)]()
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Made by](https://img.shields.io/badge/made%20by-JulienWeb.fr-5A4095)](https://julienweb.fr)
 
 [![Logo Lead Scraper Pro](https://github.com/molokoloco/lead-scraper-pro/blob/main/images/Logo-Lead-Scraper-Pro.png?raw=true "Logo Lead Scraper Pro")](https://github.com/molokoloco/lead-scraper-pro/blob/main/images/Logo-Lead-Scraper-Pro.png)
