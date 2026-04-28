@@ -7,7 +7,7 @@
 [![License](https://img.shields.io/badge/license-private-red)]()
 [![Made by](https://img.shields.io/badge/made%20by-JulienWeb.fr-5A4095)](https://julienweb.fr)
 
-![Logo Lead Scraper Pro](https://github.com/molokoloco/lead-scraper-pro/blob/main/Logo-Lead-Scraper-Pro.png?raw=true "Logo Lead Scraper Pro")
+![Logo Lead Scraper Pro](https://github.com/molokoloco/lead-scraper-pro/blob/main/images/Logo-Lead-Scraper-Pro.png?raw=true "Logo Lead Scraper Pro")
 
 > **Industrial-grade B2B prospecting pipeline** — multi-source scraping, dedup, enrichment.
 > One command, one clean CSV, ready for Mailchimp / CRM / Lemlist.
@@ -33,9 +33,13 @@ npm run enrich    # merge + enrich
 # → data/vX/results_final_enriched.csv ✅
 ```
 
-![npm-run-scan 1](https://github.com/molokoloco/lead-scraper-pro/blob/main/npm-run-scan.jpg?raw=true "Demo in progress")
+![npm-run-scan 1](https://github.com/molokoloco/lead-scraper-pro/blob/main/images/npm-run-scan.jpg?raw=true "Demo in progress")
 
-![npm-run-scan 2](https://github.com/molokoloco/lead-scraper-pro/blob/main/npm-run-scan2.jpg?raw=true "Demo in progress")
+![npm-run-scan 2](https://github.com/molokoloco/lead-scraper-pro/blob/main/images/npm-run-scan2.jpg?raw=true "Demo in progress")
+
+Final result, from config to Google Sheet :
+
+![config-v4-results-final-enriched](https://github.com/molokoloco/lead-scraper-pro/blob/main/images/config-v4-results-final-enriched.png?raw=true "Demo in progress")
 
 ---
 
@@ -139,7 +143,7 @@ Each scraper runs headless (or stealth) and writes its own CSV into `data/[VERSI
 | `pagesjaunes.js` | PagesJaunes.fr | Playwright headless — also captures Facebook profile link if present |
 | `googlemaps.js` | Google Maps API | HTTP |
 | `instagram.js` | Instagram | Chrome persistent profile (stealth) — manual login → Google `site:instagram.com` → fallback Bing — profile URL validation → meta tag + DOM link extraction |
-| `cylex.js` | Cylex.fr | Playwright headless |
+| `cylex.js` | Cylex.fr | Playwright headless — **Currently disabled** (bot detection) |
 
 #### `instagram.js` — detail
 
