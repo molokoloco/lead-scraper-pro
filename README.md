@@ -11,6 +11,7 @@
 
 > **Industrial-grade B2B prospecting pipeline** — multi-source scraping, dedup, enrichment.
 > One command, one clean CSV, ready for Mailchimp / CRM / Lemlist.
+
 > **Article on Julienweb**: [https://julienweb.fr/blog/lead-scraper-pro-prospection-b2b-automatisee/10046/](https://julienweb.fr/blog/lead-scraper-pro-prospection-b2b-automatisee/10046/)
 
 | | |
@@ -36,10 +37,13 @@ npm run scan      # collect from all sources
 npm run enrich    # merge + enrich
 # → data/vX/results_final_enriched.csv ✅
 ```
+---
+
+### Shell
 
 [![npm-run-scan 1](https://github.com/molokoloco/lead-scraper-pro/blob/main/images/npm-run-scan.jpg?raw=true "Demo in progress")](https://github.com/molokoloco/lead-scraper-pro/blob/main/images/npm-run-scan.jpg)
 
-Final result, from config to Google Sheet :
+✅ Final result, from config to Google Sheet :
 
 [![config-v4-results-final-enriched](https://github.com/molokoloco/lead-scraper-pro/blob/main/images/config-v4-results-final-enriched.png?raw=true "Demo in progress")](https://github.com/molokoloco/lead-scraper-pro/blob/main/images/config-v4-results-final-enriched.png)
 
