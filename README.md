@@ -27,6 +27,9 @@
 
 ### ⚡ TL;DR
 
+Copy `./config/v5_bobigny.js` to `./config/v6_xxx.js` 
+Update `./config/index.js`
+
 ```bash
 npm install && npx playwright install chromium
 npm run scan      # collect from all sources
@@ -93,6 +96,9 @@ tests/           — standalone test scripts for Google and Facebook flows
 ---
 
 ### 🔄 Pipeline A → Z
+
+Copy `./config/v5_bobigny.js` to `./config/v6_xxx.js` 
+Update `./config/index.js`
 
 ```
 ┌─────────────────────────────────────────────────────────┐
