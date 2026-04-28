@@ -11,6 +11,7 @@
 
 > **Industrial-grade B2B prospecting pipeline** — multi-source scraping, dedup, enrichment.
 > One command, one clean CSV, ready for Mailchimp / CRM / Lemlist.
+> **Article on Julienweb**: [https://julienweb.fr/blog/lead-scraper-pro-prospection-b2b-automatisee/10046/](https://julienweb.fr/blog/lead-scraper-pro-prospection-b2b-automatisee/10046/)
 
 | | |
 |---|---|
