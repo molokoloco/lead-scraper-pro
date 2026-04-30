@@ -1,11 +1,11 @@
 module.exports = {
-    version: 'v4', // Change export directory to "data/VX"
+    version: 'v7', // Change export directory to "data/VX"
     location: {
-        name: 'Aubervilliers 93',
-        keywords: ['aubervilliers', '93300'],
-        zip: '93300',
-        coords: { lat: 48.905015, lng: 2.366706 },
-        radius: 2000
+        name: 'Montreuil 93',
+        keywords: ['montreuil', '93100'],
+        zip: '93100',
+        coords: { lat: 48.8637, lng: 2.4388 },
+        radius: 1000
     },
     categories: [
         'entreprise de rénovation générale',

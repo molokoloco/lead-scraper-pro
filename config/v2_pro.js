@@ -1,5 +1,5 @@
 module.exports = {
-  version: 'v2',
+  version: 'v2', // Change export directory to "data/VX"
   location: {
     name: 'Pantin 93',
     keywords: ['pantin', '93500'],

@@ -1,11 +1,11 @@
 module.exports = {
-    version: 'v4', // Change export directory to "data/VX"
+    version: 'v6', // Change export directory to "data/VX"
     location: {
-        name: 'Aubervilliers 93',
-        keywords: ['aubervilliers', '93300'],
-        zip: '93300',
+        name: 'Bobigny 93',
+        keywords: ['bobigny', '93000'],
+        zip: '93000',
         coords: { lat: 48.905015, lng: 2.366706 },
-        radius: 2000
+        radius: 1000
     },
     categories: [
         'entreprise de rénovation générale',

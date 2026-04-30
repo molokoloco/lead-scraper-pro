@@ -43,9 +43,14 @@ npm run enrich    # merge + enrich
 
 [![npm-run-scan 1](https://github.com/molokoloco/lead-scraper-pro/blob/main/images/npm-run-scan.jpg?raw=true "Demo in progress")](https://github.com/molokoloco/lead-scraper-pro/blob/main/images/npm-run-scan.jpg)
 
-✅ Final result, from config to Google Sheet :
+✅ Final result, from config to Google Sheet:
 
 [![config-v4-results-final-enriched](https://github.com/molokoloco/lead-scraper-pro/blob/main/images/config-v4-results-final-enriched.png?raw=true "Demo in progress")](https://github.com/molokoloco/lead-scraper-pro/blob/main/images/config-v4-results-final-enriched.png)
+
+Youtube demo video:
+
+[![Youtube Lead Scraper Pro-v2.1](https://github.com/molokoloco/lead-scraper-pro/blob/main/images/Youtube-Lead-Scraper-Pro-v2.1.jpg?raw=true "Demo in progress")](https://youtu.be/m9e6N1Q4g4A)
+[https://youtu.be/m9e6N1Q4g4A](https://youtu.be/m9e6N1Q4g4A)
 
 ---
 

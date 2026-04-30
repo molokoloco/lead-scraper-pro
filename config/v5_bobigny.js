@@ -1,5 +1,5 @@
 module.exports = {
-    version: 'v5',
+    version: 'v5', // Change export directory to "data/VX"
     location: {
         name: 'Bobigny 93',
         keywords: ['bobigny', '93000'],
