@@ -49,8 +49,8 @@ npm run enrich    # merge + enrich
 
 Youtube demo video:
 
-[![Youtube Lead Scraper Pro-v2.1](https://github.com/molokoloco/lead-scraper-pro/blob/main/images/Youtube-Lead-Scraper-Pro-v2.1.jpg?raw=true "Demo in progress")](https://youtu.be/m9e6N1Q4g4A)
-[https://youtu.be/m9e6N1Q4g4A](https://youtu.be/m9e6N1Q4g4A)
+[![Youtube Lead Scraper Pro-v2.1](https://github.com/molokoloco/lead-scraper-pro/blob/main/images/Youtube-Lead-Scraper-Pro-v2.1.jpg?raw=true "Demo in progress")](https://www.youtube.com/watch?v=DmMr9zLK7y0)
+[https://youtu.be/m9e6N1Q4g4A](https://www.youtube.com/watch?v=DmMr9zLK7y0)
 
 ---
 
